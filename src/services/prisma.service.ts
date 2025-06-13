@@ -1,4 +1,5 @@
-import { PrismaClient } from "../generated/prisma";
+import { PrismaClient } from "@prisma/client";
+// This service provides a singleton instance of PrismaClient to ensure
 
 class PrismaService {
   private static instance: PrismaClient;
