@@ -1,9 +1,21 @@
-import express from "express";
-import userRoutes from "./routes/user.routes";
+import express, { Application } from "express";
+import cors from "cors";
+import { ErrorHandler } from "./common/errors/error-handler";
+import apiRouter from "./routes/index";
+import { setupSwagger } from "./config/swagger";
+export default async (app: Application): Promise<void> => {
+  // Middlewares
+  app.use(cors());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  app.use(express.static(__dirname + "/public")); // Serving static files
 
-const app = express();
+  // Setup Swagger
+  setupSwagger(app);
 
-app.use(express.json());
-app.use("/users", userRoutes);
+  // API Routes
+  app.use(apiRouter);
 
-export default app;
+  // Error handling
+  app.use(ErrorHandler);
+};
