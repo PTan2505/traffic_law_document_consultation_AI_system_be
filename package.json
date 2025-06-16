@@ -12,7 +12,7 @@
     "prod": "npm run build && npm start",
     "generate": "prisma generate",
     "migrate:dev": "prisma migrate dev --schema=./prisma/schema.prisma --name init",
-    "migrate:deploy": "prisma migrate deploy --schema=./prisma/schema.prisma" 
+    "migrate:deploy": "prisma migrate deploy --schema=./prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",
@@ -31,6 +31,8 @@
     "method-override": "^3.0.0",
     "prisma": "^6.9.0",
     "reflect-metadata": "^0.2.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "winston": "^3.17.0"
   },
   "devDependencies": {
