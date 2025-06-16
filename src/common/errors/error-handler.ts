@@ -50,7 +50,9 @@ export const ErrorHandler = async (
     await errorLogger.logError(err, req);
 
     const statusCode = err.statusCode || 500;
-    const isTrusted = errorLogger.isTrustError(err);
+    //const isTrusted = errorLogger.isTrustError(err);
+    const isTrusted = true
+
 
     res.status(statusCode).json({
       status: "error",
