@@ -26,6 +26,7 @@ interface UserRepositoryInterface {
   update(id: number, data: UpdateUserDto): Promise<Omit<User, "password">>;
   delete(id: number): Promise<void>;
   findByEmail(email: string): Promise<User | null>;
+  findByIdWithPassword(id: number): Promise<User | null>;
 }
 
 export class UserRepository implements UserRepositoryInterface {
@@ -155,6 +156,12 @@ export class UserRepository implements UserRepositoryInterface {
   async findByEmail(email: string): Promise<User | null> {
     return prisma.user.findUnique({
       where: { email },
+    });
+  }
+
+  async findByIdWithPassword(id: number): Promise<User | null> {
+    return prisma.user.findUnique({
+      where: { id },
     });
   }
 }
