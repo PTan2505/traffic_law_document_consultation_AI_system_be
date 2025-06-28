@@ -4,6 +4,7 @@ import conversationRouter from "./conversation";
 import messagesRouter from "./messages";
 import userRouter from "./user.routes";
 import authRouter from "./auth.routes";
+import chatbotRouter from "./chatbot.routes";
 
 const apiRouter = Router();
 const API_V1_PREFIX = "/api/v1";
@@ -11,6 +12,7 @@ const API_V1_PREFIX = "/api/v1";
 // Mount the routers under specific paths
 apiRouter.use(`${API_V1_PREFIX}/test`, testRouter);
 apiRouter.use(`${API_V1_PREFIX}/auth`, authRouter);
+apiRouter.use(`${API_V1_PREFIX}/chatbot`, chatbotRouter);
 apiRouter.use(`${API_V1_PREFIX}/conversations`, conversationRouter);
 apiRouter.use(`${API_V1_PREFIX}/messages`, messagesRouter);
 apiRouter.use(`${API_V1_PREFIX}/users`, userRouter);

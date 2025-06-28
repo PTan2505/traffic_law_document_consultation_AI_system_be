@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vietnamese Traffic Law Chatbot API Test Client</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .section-header:hover {
+            background: #e9ecef;
+        }
+
+        .section-header h2 {
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-header .toggle {
+            font-size: 1.5em;
+            transition: transform 0.3s;
+        }
+
+        .section-header.active .toggle {
+            transform: rotate(180deg);
+        }
+
+        .section-content {
+            padding: 20px;
+            display: none;
+        }
+
+        .section-content.active {
+            display: block;
+        }
+
+        .endpoint {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .endpoint-header {
+            background: #495057;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .method {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .method.get {
+            background: #28a745;
+        }
+
+        .method.post {
+            background: #007bff;
+        }
+
+        .method.put {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .method.delete {
+            background: #dc3545;
+        }
+
+        .endpoint-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            background: #f8f9fa;
+        }
+
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .response-body {
+            background: #212529;
+            color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .auth-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid #e0e0e0;
+            z-index: 1000;
+        }
+
+        .auth-status.authenticated {
+            border-color: #28a745;
+        }
+
+        .auth-status.unauthenticated {
+            border-color: #dc3545;
+        }
+
+        .guest-session {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        .guest-session h4 {
+            color: #856404;
+            margin-bottom: 5px;
+        }
+
+        .guest-session p {
+            color: #856404;
+            font-size: 0.9em;
+        }
+
+        .copy-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .copy-button:hover {
+            background: #5a6268;
+        }
+
+        .config-section {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .config-section h3 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .config-row {
+            display: flex;
+            gap: 20px;
+            align-items: end;
+        }
+
+        .config-row .form-group {
+            flex: 1;
+        }
+
+        .config-row .button {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Vietnamese Traffic Law Chatbot</h1>
+            <p>API Test Client - Test all endpoints with a beautiful interface</p>
+        </div>
+
+        <div class="content">
+            <!-- Configuration Section -->
+            <div class="config-section">
+                <h3>⚙️ Configuration</h3>
+                <div class="config-row">
+                    <div class="form-group">
+                        <label for="baseUrl">Base URL:</label>
+                        <input type="text" id="baseUrl" value="http://localhost:3000/api/v1">
+                    </div>
+                    <button class="button" onclick="updateBaseUrl()">Update</button>
+                </div>
+            </div>
+
+            <!-- Authentication Status -->
+            <div class="auth-status unauthenticated" id="authStatus">
+                <div><strong>🔒 Status:</strong> <span id="authStatusText">Not Authenticated</span></div>
+                <div><strong>👤 User:</strong> <span id="currentUser">None</span></div>
+                <div><strong>🎫 Token:</strong> <span id="tokenStatus">None</span></div>
+            </div>
+
+            <!-- Guest Session Info -->
+            <div class="guest-session" id="guestSession" style="display: none;">
+                <h4>🎭 Guest Session Active</h4>
+                <p>Guest Session ID: <span id="guestSessionId">None</span></p>
+                <p>Guest conversations are temporary and will be cleared after 1 hour of inactivity.</p>
+                <button class="copy-button" onclick="copyGuestId()">Copy ID</button>
+                <button class="copy-button" onclick="clearGuestSession()" style="background: #dc3545;">Clear
+                    Session</button>
+            </div>
+
+            <!-- Authentication Section -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection('auth')">
+                    <h2>🔐 Authentication <span class="toggle">▼</span></h2>
+                </div>
+                <div class="section-content" id="auth">
+                    <!-- Register -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method post">POST</span>
+                            <span>/auth/register</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <div class="form-group">
+                                <label>Username:</label>
+                                <input type="text" id="register-username" placeholder="Enter username">
+                            </div>
+                            <div class="form-group">
+                                <label>Email:</label>
+                                <input type="email" id="register-email" placeholder="Enter email">
+                            </div>
+                            <div class="form-group">
+                                <label>Password:</label>
+                                <input type="password" id="register-password" placeholder="Enter password">
+                            </div>
+                            <div class="form-group">
+                                <label>Full Name:</label>
+                                <input type="text" id="register-fullname" placeholder="Enter full name">
+                            </div>
+                            <button class="button" onclick="register()">Register</button>
+                            <div class="response" id="register-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Login -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method post">POST</span>
+                            <span>/auth/login</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <div class="form-group">
+                                <label>Email:</label>
+                                <input type="email" id="login-email" placeholder="Enter email">
+                            </div>
+                            <div class="form-group">
+                                <label>Password:</label>
+                                <input type="password" id="login-password" placeholder="Enter password">
+                            </div>
+                            <button class="button" onclick="login()">Login</button>
+                            <div class="response" id="login-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Get Profile -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span>/auth/profile</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <button class="button" onclick="getProfile()">Get Profile</button>
+                            <div class="response" id="profile-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Update Profile -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method put">PUT</span>
+                            <span>/auth/profile</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <div class="form-group">
+                                <label>Username:</label>
+                                <input type="text" id="update-username" placeholder="Enter new username">
+                            </div>
+                            <div class="form-group">
+                                <label>Full Name:</label>
+                                <input type="text" id="update-fullname" placeholder="Enter new full name">
+                            </div>
+                            <button class="button" onclick="updateProfile()">Update Profile</button>
+                            <div class="response" id="update-profile-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Change Password -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method post">POST</span>
+                            <span>/auth/change-password</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <div class="form-group">
+                                <label>Current Password:</label>
+                                <input type="password" id="current-password" placeholder="Enter current password">
+                            </div>
+                            <div class="form-group">
+                                <label>New Password:</label>
+                                <input type="password" id="new-password" placeholder="Enter new password">
+                            </div>
+                            <button class="button" onclick="changePassword()">Change Password</button>
+                            <div class="response" id="change-password-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Logout -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method post">POST</span>
+                            <span>/auth/logout</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <button class="button" onclick="logout()">Logout</button>
+                            <div class="response" id="logout-response" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chatbot Section -->
+            <div class="section">
+                <div class="section-header active" onclick="toggleSection('chatbot')">
+                    <h2>🤖 Chatbot <span class="toggle">▲</span></h2>
+                </div>
+                <div class="section-content active" id="chatbot">
+                    <!-- Chat (Works for both guest and authenticated) -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method post">POST</span>
+                            <span>/chatbot/chat</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <div class="form-group">
+                                <label>Message:</label>
+                                <textarea id="chat-message"
+                                    placeholder="Ask about Vietnamese traffic laws..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Guest Session ID (Optional for guest mode):</label>
+                                <input type="text" id="chat-guest-session" placeholder="Leave empty for new session">
+                            </div>
+                            <div class="form-group">
+                                <label>Conversation ID (Optional for authenticated users):</label>
+                                <input type="number" id="chat-conversation-id"
+                                    placeholder="Leave empty for new conversation">
+                            </div>
+                            <button class="button" onclick="sendChatMessage()">Send Message</button>
+                            <div class="response" id="chat-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Get Guest History -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span>/chatbot/guest/history</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <div class="form-group">
+                                <label>Guest Session ID:</label>
+                                <input type="text" id="guest-history-session" placeholder="Enter guest session ID">
+                            </div>
+                            <button class="button" onclick="getGuestHistory()">Get Guest History</button>
+                            <div class="response" id="guest-history-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Get User Conversations (Authenticated) -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span>/chatbot/conversations</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <button class="button" onclick="getUserConversations()">Get My Conversations</button>
+                            <div class="response" id="user-conversations-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Get Conversation History (Authenticated) -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span>/chatbot/conversations/:conversationId/history</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <div class="form-group">
+                                <label>Conversation ID:</label>
+                                <input type="number" id="conversation-history-id" placeholder="Enter conversation ID">
+                            </div>
+                            <button class="button" onclick="getConversationHistory()">Get Conversation History</button>
+                            <div class="response" id="conversation-history-response" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let baseUrl = 'http://localhost:3000/api/v1';
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        let guestSessionId = localStorage.getItem('guestSessionId');
+
+        // Update auth status on page load
+        updateAuthStatus();
+        updateGuestSession();
+
+        // Load existing guest session into the form
+        if (guestSessionId) {
+            document.getElementById('chat-guest-session').value = guestSessionId;
+            // Also auto-fill the guest history session field
+            const guestHistoryField = document.getElementById('guest-history-session');
+            if (guestHistoryField) {
+                guestHistoryField.value = guestSessionId;
+            }
+        }
+
+        function updateBaseUrl() {
+            baseUrl = document.getElementById('baseUrl').value;
+            localStorage.setItem('baseUrl', baseUrl);
+        }
+
+        function toggleSection(sectionId) {
+            const header = document.querySelector(`#${sectionId}`).previousElementSibling;
+            const content = document.getElementById(sectionId);
+
+            header.classList.toggle('active');
+            content.classList.toggle('active');
+        }
+
+        function updateAuthStatus() {
+            const statusElement = document.getElementById('authStatus');
+            const statusText = document.getElementById('authStatusText');
+            const currentUserElement = document.getElementById('currentUser');
+            const tokenStatus = document.getElementById('tokenStatus');
+
+            if (authToken && currentUser) {
+                statusElement.className = 'auth-status authenticated';
+                statusText.textContent = 'Authenticated';
+                currentUserElement.textContent = currentUser.username || currentUser.email;
+                tokenStatus.textContent = 'Valid';
+            } else {
+                statusElement.className = 'auth-status unauthenticated';
+                statusText.textContent = 'Not Authenticated';
+                currentUserElement.textContent = 'None';
+                tokenStatus.textContent = 'None';
+            }
+        }
+
+        function updateGuestSession() {
+            const guestSessionElement = document.getElementById('guestSession');
+            const guestSessionIdElement = document.getElementById('guestSessionId');
+
+            if (guestSessionId) {
+                guestSessionElement.style.display = 'block';
+                guestSessionIdElement.textContent = guestSessionId;
+            } else {
+                guestSessionElement.style.display = 'none';
+            }
+        }
+
+        function getHeaders(includeAuth = true) {
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+
+            if (includeAuth && authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+
+            return headers;
+        }
+
+        function displayResponse(responseId, status, data, headers = {}) {
+            const responseElement = document.getElementById(responseId);
+            const statusClass = status >= 200 && status < 300 ? 'success' : 'error';
+
+            responseElement.innerHTML = `
+                <div class="response-header">
+                    <span class="status ${statusClass}">Status: ${status}</span>
+                    <button class="copy-button" onclick="copyResponse('${responseId}')">Copy</button>
+                </div>
+                <div class="response-body">${JSON.stringify(data, null, 2)}</div>
+            `;
+            responseElement.style.display = 'block';
+        }
+
+        function copyResponse(responseId) {
+            const responseBody = document.querySelector(`#${responseId} .response-body`);
+            navigator.clipboard.writeText(responseBody.textContent);
+        }
+
+        async function makeRequest(method, endpoint, data = null, responseId = '', includeAuth = true, customHeaders = {}) {
+            try {
+                const headers = { ...getHeaders(includeAuth), ...customHeaders };
+                const options = {
+                    method,
+                    headers
+                };
+
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(`${baseUrl}${endpoint}`, options);
+                const responseData = await response.json();
+
+                if (responseId) {
+                    displayResponse(responseId, response.status, responseData);
+                }
+
+                return { status: response.status, data: responseData };
+            } catch (error) {
+                if (responseId) {
+                    displayResponse(responseId, 0, { error: error.message });
+                }
+                throw error;
+            }
+        }
+
+        // Authentication Functions
+        async function register() {
+            const data = {
+                username: document.getElementById('register-username').value,
+                email: document.getElementById('register-email').value,
+                password: document.getElementById('register-password').value,
+                fullName: document.getElementById('register-fullname').value
+            };
+
+            await makeRequest('POST', '/auth/register', data, 'register-response', false);
+        }
+
+        async function login() {
+            const data = {
+                email: document.getElementById('login-email').value,
+                password: document.getElementById('login-password').value
+            };
+
+            const response = await makeRequest('POST', '/auth/login', data, 'login-response', false);
+
+            if (response.status === 200 && response.data.token) {
+                authToken = response.data.token;
+                currentUser = response.data.user;
+                localStorage.setItem('authToken', authToken);
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                updateAuthStatus();
+            }
+        }
+
+        async function getProfile() {
+            await makeRequest('GET', '/auth/profile', null, 'profile-response');
+        }
+
+        async function updateProfile() {
+            const data = {
+                username: document.getElementById('update-username').value,
+                fullName: document.getElementById('update-fullname').value
+            };
+
+            // Remove empty fields
+            Object.keys(data).forEach(key => {
+                if (!data[key]) delete data[key];
+            });
+
+            const response = await makeRequest('PUT', '/auth/profile', data, 'update-profile-response');
+
+            if (response.status === 200) {
+                currentUser = response.data;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                updateAuthStatus();
+            }
+        }
+
+        async function changePassword() {
+            const data = {
+                currentPassword: document.getElementById('current-password').value,
+                newPassword: document.getElementById('new-password').value
+            };
+
+            await makeRequest('POST', '/auth/change-password', data, 'change-password-response');
+        }
+
+        async function logout() {
+            const response = await makeRequest('POST', '/auth/logout', null, 'logout-response');
+
+            if (response.status === 200) {
+                authToken = null;
+                currentUser = null;
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('currentUser');
+                updateAuthStatus();
+            }
+        }
+
+        // Chatbot Functions
+        async function sendChatMessage() {
+            const data = {
+                message: document.getElementById('chat-message').value
+            };
+
+            let guestSession = document.getElementById('chat-guest-session').value;
+            const conversationId = document.getElementById('chat-conversation-id').value;
+
+            // If user is not authenticated and no guest session provided, generate one
+            if (!authToken && !guestSession) {
+                guestSession = generateGuestId();
+                document.getElementById('chat-guest-session').value = guestSession;
+                console.log('Generated new guest session:', guestSession);
+            }
+
+            // Prepare custom headers for guest session
+            let customHeaders = {};
+            if (guestSession) {
+                data.guestSessionId = guestSession;
+                customHeaders['X-Guest-ID'] = guestSession;
+            }
+
+            if (conversationId) {
+                data.conversationId = parseInt(conversationId);
+            }
+
+            const response = await makeRequest('POST', '/chatbot/chat', data, 'chat-response', true, customHeaders);
+
+            // Update guest session if returned
+            if (response.status === 200 && response.data.guestSessionId) {
+                guestSessionId = response.data.guestSessionId;
+                localStorage.setItem('guestSessionId', guestSessionId);
+
+                // Update the input field and display
+                document.getElementById('chat-guest-session').value = guestSessionId;
+                const guestHistoryField = document.getElementById('guest-history-session');
+                if (guestHistoryField) {
+                    guestHistoryField.value = guestSessionId;
+                }
+                updateGuestSession();
+
+                console.log('Guest session updated:', guestSessionId);
+            }
+        }
+
+        function generateGuestId() {
+            return 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function copyGuestId() {
+            const guestId = localStorage.getItem('guestSessionId');
+            if (guestId) {
+                navigator.clipboard.writeText(guestId);
+                alert('Guest ID copied to clipboard!');
+            }
+        }
+
+        function clearGuestSession() {
+            localStorage.removeItem('guestSessionId');
+            guestSessionId = null;
+            document.getElementById('chat-guest-session').value = '';
+            updateGuestSession();
+            alert('Guest session cleared!');
+        }
+
+        async function getGuestHistory() {
+            const sessionId = document.getElementById('guest-history-session').value;
+
+            if (!sessionId) {
+                alert('Please enter a guest session ID');
+                return;
+            }
+
+            // Send guest ID in header
+            const customHeaders = {
+                'X-Guest-ID': sessionId
+            };
+
+            await makeRequest('GET', '/chatbot/guest/history', null, 'guest-history-response', false, customHeaders);
+        }
+
+        async function getUserConversations() {
+            await makeRequest('GET', '/chatbot/conversations', null, 'user-conversations-response');
+        }
+
+        async function getConversationHistory() {
+            const conversationId = document.getElementById('conversation-history-id').value;
+            await makeRequest('GET', `/chatbot/conversations/${conversationId}/history`, null, 'conversation-history-response');
+        }
+
+        // Load saved base URL
+        const savedBaseUrl = localStorage.getItem('baseUrl');
+        if (savedBaseUrl) {
+            baseUrl = savedBaseUrl;
+            document.getElementById('baseUrl').value = baseUrl;
+        }
+
+        // Quick test functions
+        function fillTestData() {
+            // Fill register form
+            document.getElementById('register-username').value = 'testuser';
+            document.getElementById('register-email').value = 'test@example.com';
+            document.getElementById('register-password').value = 'password123';
+            document.getElementById('register-fullname').value = 'Test User';
+
+            // Fill login form
+            document.getElementById('login-email').value = 'test@example.com';
+            document.getElementById('login-password').value = 'password123';
+
+            // Fill chat message
+            document.getElementById('chat-message').value = 'Tôi có thể lái xe máy khi chưa đủ 18 tuổi không?';
+        }
+
+        // Auto-fill test data on page load for development
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            fillTestData();
+        }
+    </script>
+</body>
+
+</html>
