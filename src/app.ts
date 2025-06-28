@@ -14,8 +14,8 @@ export default async (app: Application): Promise<void> => {
   setupSwagger(app);
 
   // API Routes
-  app.use(apiRouter); 
+  app.use(apiRouter);
 
-  // Error handling 
+  // Error handling
   app.use(ErrorHandler);
 };
