@@ -1,5 +1,12 @@
-import { IsString, IsNumber, IsOptional, IsDateString, MinLength, MaxLength } from 'class-validator';
-import { Expose, Transform } from 'class-transformer';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsDateString,
+  MinLength,
+  MaxLength,
+} from "class-validator";
+import { Expose, Transform } from "class-transformer";
 
 /**
  * @swagger
@@ -28,16 +35,15 @@ import { Expose, Transform } from 'class-transformer';
  *           example: I need information about traffic regulations
  */
 export class CreateConversationDto {
-    @IsNumber()
-    @Expose()
-    userId: number;
+  @IsNumber()
+  @Expose()
+  userId: number;
 
-    @IsString()
-    @MinLength(3)
-    @MaxLength(100)
-    @Expose()
-    title: string;
-
+  @IsString()
+  @MinLength(3)
+  @MaxLength(100)
+  @Expose()
+  title: string;
 }
 
 /**
@@ -60,22 +66,28 @@ export class CreateConversationDto {
  *           example: Updated information about traffic regulations
  */
 export class UpdateConversationDto {
-    @IsString()
-    @IsOptional()
-    @MinLength(3)
-    @MaxLength(100)
-    @Expose()
-    title?: string;    @IsString()
-    @IsOptional()
-    @MaxLength(5000)
-    @Expose()
-    answer?: string;
+  @IsString()
+  @IsOptional()
+  @MinLength(3)
+  @MaxLength(100)
+  @Expose()
+  title?: string;
+  @IsString()
+  @IsOptional()
+  @MaxLength(5000)
+  @Expose()
+  answer?: string;
 
-    @IsString()
-    @IsOptional()
-    @MaxLength(1000)
-    @Expose()
-    context?: string;
+  @IsString()
+  @IsOptional()
+  @MaxLength(1000)
+  @Expose()
+  context?: string;
+
+  @IsString()
+  @IsOptional()
+  @Expose()
+  updatedBy?: string;
 }
 
 /**
@@ -117,24 +129,24 @@ export class UpdateConversationDto {
  *           example: '2025-06-15T10:30:00Z'
  */
 export class ConversationResponseDto {
-    @Expose()
-    id: number;
+  @Expose()
+  id: number;
 
-    @Expose()
-    userId: number;
+  @Expose()
+  userId: number;
 
-    @Expose()
-    title: string;
+  @Expose()
+  title: string;
 
-    @Expose()
-    answer?: string;
+  @Expose()
+  answer?: string;
 
-    @Expose()
-    context?: string;
+  @Expose()
+  context?: string;
 
-    @Expose()
-    createdAt: Date;
+  @Expose()
+  createdAt: Date;
 
-    @Expose()
-    updatedAt: Date;
+  @Expose()
+  updatedAt: Date;
 }
