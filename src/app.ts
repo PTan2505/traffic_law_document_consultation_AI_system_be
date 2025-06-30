@@ -12,11 +12,6 @@ export default async (app: Application): Promise<void> => {
   app.use(express.urlencoded({ extended: true }));
   app.use(express.static(__dirname + "/public")); // Serving static files
 
-  // Serve the HTML test client at root
-  app.get("/", (req, res) => {
-    res.sendFile(path.join(process.cwd(), "api-test-client.html"));
-  });
-
   // Health check endpoint
   app.get("/health", (req, res) => {
     res.json({
@@ -25,16 +20,21 @@ export default async (app: Application): Promise<void> => {
       timestamp: new Date().toISOString(),
       endpoints: {
         "API Documentation": "/docs",
-        "Test Client": "/",
-        "API Base": "/api/v1",
+        "Test Client": "/test-client",
+        "API Base": "/",
       },
     });
+  });
+
+  // Serve the HTML test client at /test-client
+  app.get("/test-client", (req, res) => {
+    res.sendFile(path.join(process.cwd(), "api-test-client.html"));
   });
 
   // Setup Swagger
   setupSwagger(app);
 
-  // API Routes
+  // API Routes (mounted at root)
   app.use(apiRouter);
 
   // Error handling

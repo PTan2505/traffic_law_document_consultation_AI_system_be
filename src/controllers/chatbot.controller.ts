@@ -13,7 +13,7 @@ export class ChatbotController {
 
   /**
    * @swagger
-   * /api/v1/chatbot/chat:
+   * /chatbot/chat:
    *   post:
    *     tags: [Chatbot]
    *     summary: Send a message to the Vietnamese Traffic Law AI Assistant
@@ -78,7 +78,7 @@ export class ChatbotController {
 
   /**
    * @swagger
-   * /api/v1/chatbot/conversations:
+   * /chatbot/conversations:
    *   get:
    *     tags: [Chatbot]
    *     summary: Get user's chat conversations
@@ -156,7 +156,7 @@ export class ChatbotController {
 
   /**
    * @swagger
-   * /api/v1/chatbot/conversations/{conversationId}/history:
+   * /chatbot/conversations/{conversationId}/history:
    *   get:
    *     tags: [Chatbot]
    *     summary: Get chat history for a specific conversation
@@ -252,7 +252,7 @@ export class ChatbotController {
 
   /**
    * @swagger
-   * /api/v1/chatbot/guest/history:
+   * /chatbot/guest/history:
    *   get:
    *     tags: [Chatbot]
    *     summary: Get guest chat history
@@ -327,7 +327,7 @@ export class ChatbotController {
 
   /**
    * @swagger
-   * /api/v1/chatbot/chat/stream:
+   * /chatbot/chat/stream:
    *   post:
    *     tags: [Chatbot]
    *     summary: Send a message to the Vietnamese Traffic Law AI Assistant with streaming response

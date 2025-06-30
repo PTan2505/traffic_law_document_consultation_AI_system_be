@@ -7,18 +7,18 @@ import authRouter from "./auth.routes";
 import chatbotRouter from "./chatbot.routes";
 
 const apiRouter = Router();
-const API_V1_PREFIX = "/api/v1";
+const API_PREFIX = ""; // Root path - no prefix needed
 
 // Mount the routers under specific paths
-apiRouter.use(`${API_V1_PREFIX}/test`, testRouter);
-apiRouter.use(`${API_V1_PREFIX}/auth`, authRouter);
-apiRouter.use(`${API_V1_PREFIX}/chatbot`, chatbotRouter);
-apiRouter.use(`${API_V1_PREFIX}/conversations`, conversationRouter);
-apiRouter.use(`${API_V1_PREFIX}/messages`, messagesRouter);
-apiRouter.use(`${API_V1_PREFIX}/users`, userRouter);
+apiRouter.use(`/test`, testRouter);
+apiRouter.use(`/auth`, authRouter);
+apiRouter.use(`/chatbot`, chatbotRouter);
+apiRouter.use(`/conversations`, conversationRouter);
+apiRouter.use(`/messages`, messagesRouter);
+apiRouter.use(`/users`, userRouter);
 
 // Add other feature routes here as your application grows
-// apiRouter.use(`${API_V1_PREFIX}/products`, productRoutes);
-// apiRouter.use(`${API_V1_PREFIX}/orders`, orderRoutes);
+// apiRouter.use(`${API_PREFIX}/products`, productRoutes);
+// apiRouter.use(`${API_PREFIX}/orders`, orderRoutes);
 
 export default apiRouter; // Export the aggregated API router

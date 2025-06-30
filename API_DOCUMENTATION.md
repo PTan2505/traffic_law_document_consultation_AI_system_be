@@ -7,7 +7,7 @@ This document provides comprehensive information about the Vietnamese Traffic La
 ## 🚀 Base URL
 
 ```
-http://localhost:3000/api/v1
+http://localhost:3000
 ```
 
 ---
@@ -359,7 +359,7 @@ let guestId = localStorage.getItem("guestSessionId") || generateGuestId();
 localStorage.setItem("guestSessionId", guestId);
 
 // 2. Send streaming message
-const response = await fetch("/api/v1/chatbot/chat/stream", {
+const response = await fetch("/chatbot/chat/stream", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -420,7 +420,7 @@ function handleStreamingEvent(data) {
 
 ```javascript
 // 1. Send message with authentication
-const response = await fetch("/api/v1/chatbot/chat/stream", {
+const response = await fetch("/chatbot/chat/stream", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -435,7 +435,7 @@ const response = await fetch("/api/v1/chatbot/chat/stream", {
 
 // 2. Handle streaming (same as guest)
 // 3. Get conversations list
-const conversations = await fetch("/api/v1/chatbot/conversations", {
+const conversations = await fetch("/chatbot/conversations", {
   headers: {
     Authorization: `Bearer ${authToken}`,
   },

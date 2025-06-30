@@ -19,7 +19,7 @@ export class MessageController {
 
   /**
    * @swagger
-   * /api/v1/messages:
+   * /messages:
    *   post:
    *     tags: [Messages]
    *     summary: Create a new message
@@ -70,7 +70,7 @@ export class MessageController {
 
   /**
    * @swagger
-   * /api/v1/messages:
+   * /messages:
    *   get:
    *     tags: [Messages]
    *     summary: Get all messages with optional filtering by conversationId
@@ -145,7 +145,7 @@ export class MessageController {
 
   /**
    * @swagger
-   * /api/v1/messages/{id}:
+   * /messages/{id}:
    *   get:
    *     tags: [Messages]
    *     summary: Get a message by ID
@@ -197,7 +197,7 @@ export class MessageController {
 
   /**
    * @swagger
-   * /api/v1/messages/{id}:
+   * /messages/{id}:
    *   put:
    *     tags: [Messages]
    *     summary: Update a message
@@ -259,7 +259,7 @@ export class MessageController {
 
   /**
    * @swagger
-   * /api/v1/messages/{id}:
+   * /messages/{id}:
    *   delete:
    *     tags: [Messages]
    *     summary: Delete a message
