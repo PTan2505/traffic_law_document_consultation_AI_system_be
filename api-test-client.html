@@ -319,6 +319,156 @@
         .config-row .button {
             margin-bottom: 0;
         }
+
+        /* Streaming Chat Styles */
+        .streaming-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #ccc;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #667eea;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(26px);
+        }
+
+        .streaming-response {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Segoe UI', sans-serif;
+            line-height: 1.5;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .streaming-response.active {
+            border-left: 3px solid #667eea;
+            background: #fff;
+        }
+
+        .streaming-response .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em;
+            background: #667eea;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+
+            0%,
+            50% {
+                opacity: 1;
+            }
+
+            51%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .streaming-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .streaming-status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .streaming-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .typing-indicator.active {
+            display: flex;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-8px);
+            }
+        }
     </style>
 </head>
 
@@ -489,9 +639,17 @@
                     <div class="endpoint">
                         <div class="endpoint-header">
                             <span class="method post">POST</span>
-                            <span>/chatbot/chat</span>
+                            <span>/chatbot/chat (Regular) | /chatbot/chat/stream (Streaming)</span>
                         </div>
                         <div class="endpoint-body">
+                            <!-- Streaming Toggle -->
+                            <div class="streaming-toggle">
+                                <span><strong>💬 Streaming Mode:</strong></span>
+                                <div class="toggle-switch active" id="streamingToggle" onclick="toggleStreaming()">
+                                </div>
+                                <span id="streamingStatus">Enabled (like ChatGPT)</span>
+                            </div>
+
                             <div class="form-group">
                                 <label>Message:</label>
                                 <textarea id="chat-message"
@@ -506,8 +664,30 @@
                                 <input type="number" id="chat-conversation-id"
                                     placeholder="Leave empty for new conversation">
                             </div>
-                            <button class="button" onclick="sendChatMessage()">Send Message</button>
+                            <button class="button" id="sendChatButton" onclick="sendChatMessage()">Send Message</button>
+
+                            <!-- Regular Response -->
                             <div class="response" id="chat-response" style="display: none;"></div>
+
+                            <!-- Streaming Response -->
+                            <div class="streaming-response" id="streaming-response" style="display: none;">
+                                <div id="streaming-content"></div>
+                            </div>
+
+                            <!-- Typing Indicator -->
+                            <div class="typing-indicator" id="typing-indicator">
+                                <span>🤖 AI is thinking</span>
+                                <div class="typing-dots">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+
+                            <!-- Streaming Status -->
+                            <div class="streaming-status" id="streaming-status" style="display: none;">
+                                <span id="status-text">Ready</span>
+                            </div>
                         </div>
                     </div>
 
@@ -757,9 +937,182 @@
         }
 
         // Chatbot Functions
+        let isStreamingEnabled = true;
+        let currentStreamingRequest = null;
+
+        function toggleStreaming() {
+            isStreamingEnabled = !isStreamingEnabled;
+            const toggle = document.getElementById('streamingToggle');
+            const status = document.getElementById('streamingStatus');
+
+            toggle.classList.toggle('active', isStreamingEnabled);
+            status.textContent = isStreamingEnabled ? 'Enabled (like ChatGPT)' : 'Disabled (regular)';
+        }
+
         async function sendChatMessage() {
+            const message = document.getElementById('chat-message').value.trim();
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
+
+            if (isStreamingEnabled) {
+                await sendStreamingMessage(message);
+            } else {
+                await sendRegularMessage(message);
+            }
+        }
+
+        async function sendStreamingMessage(message) {
+            const sendButton = document.getElementById('sendChatButton');
+            const typingIndicator = document.getElementById('typing-indicator');
+            const streamingResponse = document.getElementById('streaming-response');
+            const streamingContent = document.getElementById('streaming-content');
+            const streamingStatus = document.getElementById('streaming-status');
+            const regularResponse = document.getElementById('chat-response');
+
+            try {
+                // Disable send button and show typing
+                sendButton.disabled = true;
+                sendButton.textContent = 'Streaming...';
+                typingIndicator.classList.add('active');
+                regularResponse.style.display = 'none';
+                streamingResponse.style.display = 'block';
+                streamingResponse.classList.add('active');
+                streamingStatus.style.display = 'block';
+                streamingStatus.className = 'streaming-status active';
+                document.getElementById('status-text').textContent = 'Connecting...';
+
+                // Prepare request data
+                const data = {
+                    message: message
+                };
+
+                let guestSession = document.getElementById('chat-guest-session').value;
+                const conversationId = document.getElementById('chat-conversation-id').value;
+
+                // Generate guest session if needed
+                if (!authToken && !guestSession) {
+                    guestSession = generateGuestId();
+                    document.getElementById('chat-guest-session').value = guestSession;
+                }
+
+                if (guestSession) {
+                    data.guestSessionId = guestSession;
+                }
+
+                if (conversationId) {
+                    data.conversationId = parseInt(conversationId);
+                }
+
+                // Prepare headers
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/event-stream',
+                };
+
+                if (authToken) {
+                    headers['Authorization'] = `Bearer ${authToken}`;
+                }
+
+                if (guestSession) {
+                    headers['X-Guest-ID'] = guestSession;
+                }
+
+                // Make streaming request
+                const response = await fetch(`${baseUrl}/chatbot/chat/stream`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Hide typing indicator
+                typingIndicator.classList.remove('active');
+                document.getElementById('status-text').textContent = 'Streaming...';
+
+                // Initialize streaming content
+                streamingContent.innerHTML = '';
+                let fullResponse = '';
+
+                // Read the stream
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                try {
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        const chunk = decoder.decode(value, { stream: true });
+                        const lines = chunk.split('\n');
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const data = JSON.parse(line.slice(6));
+
+                                    switch (data.type) {
+                                        case 'start':
+                                            if (data.guestSessionId) {
+                                                guestSessionId = data.guestSessionId;
+                                                localStorage.setItem('guestSessionId', guestSessionId);
+                                                document.getElementById('chat-guest-session').value = guestSessionId;
+                                                updateGuestSession();
+                                            }
+                                            break;
+
+                                        case 'token':
+                                            fullResponse += data.token;
+                                            streamingContent.innerHTML = fullResponse + '<span class="cursor"></span>';
+                                            streamingResponse.scrollTop = streamingResponse.scrollHeight;
+                                            break;
+
+                                        case 'complete':
+                                            streamingContent.innerHTML = fullResponse;
+                                            streamingResponse.classList.remove('active');
+                                            streamingStatus.className = 'streaming-status active';
+                                            document.getElementById('status-text').textContent = 'Complete ✓';
+
+                                            if (data.metadata?.guestSessionId) {
+                                                guestSessionId = data.metadata.guestSessionId;
+                                                localStorage.setItem('guestSessionId', guestSessionId);
+                                                document.getElementById('chat-guest-session').value = guestSessionId;
+                                                updateGuestSession();
+                                            }
+                                            break;
+
+                                        case 'error':
+                                            throw new Error(data.message);
+                                    }
+                                } catch (e) {
+                                    console.warn('Failed to parse SSE data:', line);
+                                }
+                            }
+                        }
+                    }
+                } finally {
+                    reader.releaseLock();
+                }
+
+            } catch (error) {
+                console.error('Streaming error:', error);
+                typingIndicator.classList.remove('active');
+                streamingStatus.className = 'streaming-status error';
+                document.getElementById('status-text').textContent = 'Error: ' + error.message;
+                streamingContent.innerHTML = `<span style="color: #dc3545;">❌ Error: ${error.message}</span>`;
+            } finally {
+                sendButton.disabled = false;
+                sendButton.textContent = 'Send Message';
+            }
+        }
+
+        async function sendRegularMessage(message) {
             const data = {
-                message: document.getElementById('chat-message').value
+                message: message
             };
 
             let guestSession = document.getElementById('chat-guest-session').value;
@@ -782,6 +1135,10 @@
             if (conversationId) {
                 data.conversationId = parseInt(conversationId);
             }
+
+            // Hide streaming response, show regular response
+            document.getElementById('streaming-response').style.display = 'none';
+            document.getElementById('streaming-status').style.display = 'none';
 
             const response = await makeRequest('POST', '/chatbot/chat', data, 'chat-response', true, customHeaders);
 

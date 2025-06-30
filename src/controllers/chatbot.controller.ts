@@ -324,4 +324,106 @@ export class ChatbotController {
       next(error);
     }
   };
+
+  /**
+   * @swagger
+   * /api/v1/chatbot/chat/stream:
+   *   post:
+   *     tags: [Chatbot]
+   *     summary: Send a message to the Vietnamese Traffic Law AI Assistant with streaming response
+   *     description: |
+   *       Send a message to the AI assistant with streaming response (like ChatGPT).
+   *       Returns Server-Sent Events (SSE) stream with tokens sent one by one.
+   *       Works for both guest and authenticated users.
+   *     parameters:
+   *       - in: header
+   *         name: X-Guest-ID
+   *         schema:
+   *           type: string
+   *         description: Guest identifier for temporary conversations (optional)
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             $ref: '#/components/schemas/ChatRequestDto'
+   *     responses:
+   *       200:
+   *         description: Streaming AI response
+   *         content:
+   *           text/event-stream:
+   *             schema:
+   *               type: string
+   *       400:
+   *         description: Bad request - Invalid input
+   *       500:
+   *         description: AI service error
+   */
+  chatStream = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.userId || null;
+      let guestId =
+        (req.headers["x-guest-id"] as string) || req.body.guestSessionId;
+
+      // If this is a guest request and no guest ID was provided, generate one
+      if (!userId && !guestId) {
+        guestId = this.generateGuestId();
+      }
+
+      const dto = plainToClass(ChatRequestDto, req.body);
+
+      // Set up SSE headers
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Cache-Control",
+      });
+
+      // Send initial data
+      const initialData = {
+        type: "start",
+        guestSessionId: guestId,
+        timestamp: new Date().toISOString(),
+      };
+      res.write(`data: ${JSON.stringify(initialData)}\n\n`);
+
+      // Handle streaming response
+      await this.chatbotService.chatStream(
+        userId,
+        dto,
+        guestId,
+        (token: string, isComplete: boolean, metadata?: any) => {
+          if (isComplete) {
+            // Send completion event
+            const completionData = {
+              type: "complete",
+              metadata,
+              timestamp: new Date().toISOString(),
+            };
+            res.write(`data: ${JSON.stringify(completionData)}\n\n`);
+            res.end();
+          } else {
+            // Send token
+            const tokenData = {
+              type: "token",
+              token,
+              timestamp: new Date().toISOString(),
+            };
+            res.write(`data: ${JSON.stringify(tokenData)}\n\n`);
+          }
+        }
+      );
+    } catch (error) {
+      // Send error event
+      const errorData = {
+        type: "error",
+        message: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString(),
+      };
+      res.write(`data: ${JSON.stringify(errorData)}\n\n`);
+      res.end();
+    }
+  };
 }

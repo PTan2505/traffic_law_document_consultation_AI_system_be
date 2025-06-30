@@ -7,6 +7,11 @@ const controller = new ChatbotController();
 
 // Public routes (works for both guest and authenticated users)
 chatbotRouter.post("/chat", authMiddleware.optionalAuth, controller.chat);
+chatbotRouter.post(
+  "/chat/stream",
+  authMiddleware.optionalAuth,
+  controller.chatStream
+);
 chatbotRouter.get("/guest/history", controller.getGuestHistory);
 
 // Protected routes (require authentication)

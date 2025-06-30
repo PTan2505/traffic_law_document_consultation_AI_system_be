@@ -65,25 +65,37 @@ export class ChatbotService {
     // Generate guest ID if not provided
     const currentGuestId = guestId || this.generateGuestId();
 
-    // Get AI response
+    // Get existing guest conversation history for context
+    const existingConversation = this.guestConversations.get(currentGuestId);
+    const conversationHistory = existingConversation
+      ? existingConversation.messages.map((msg) => ({
+          question: msg.question,
+          answer: msg.answer,
+        }))
+      : [];
+
+    // Get AI response with conversation context
     const aiResponse = await this.geminiService.generateTrafficLawResponse(
-      dto.message
+      dto.message,
+      conversationHistory
     );
 
-    // For guests, we replace the previous conversation (ChatGPT-like behavior)
+    // Update guest conversation history
+    const existingMessages = existingConversation?.messages || [];
+    const newMessage = {
+      question: dto.message,
+      answer: aiResponse,
+      timestamp: new Date(),
+    };
+    const updatedMessages = [...existingMessages, newMessage];
+
     const guestConversation: GuestConversation = {
       id: currentGuestId,
-      messages: [
-        {
-          question: dto.message,
-          answer: aiResponse,
-          timestamp: new Date(),
-        },
-      ],
-      createdAt: new Date(),
+      messages: updatedMessages,
+      createdAt: existingConversation?.createdAt || new Date(),
     };
 
-    // Store/replace guest conversation in memory
+    // Store updated guest conversation in memory
     this.guestConversations.set(currentGuestId, guestConversation);
 
     return plainToClass(
@@ -133,9 +145,16 @@ export class ChatbotService {
       }
     }
 
-    // Get AI response
+    // Get conversation history for context (last 10 messages)
+    const conversationHistory = await this.getConversationHistory(
+      conversationId,
+      10
+    );
+
+    // Get AI response with conversation context
     const aiResponse = await this.geminiService.generateTrafficLawResponse(
-      dto.message
+      dto.message,
+      conversationHistory
     );
 
     // Save the message to database
@@ -297,6 +316,159 @@ export class ChatbotService {
     }
   }
 
+  async chatStream(
+    userId: number | null,
+    dto: ChatRequestDto,
+    guestId: string | undefined,
+    onToken: (token: string, isComplete: boolean, metadata?: any) => void
+  ): Promise<void> {
+    try {
+      // Determine if this is a guest user
+      const isGuest = !userId || dto.isGuest;
+
+      if (isGuest) {
+        await this.handleGuestChatStream(dto, guestId, onToken);
+      } else {
+        await this.handleAuthenticatedChatStream(userId!, dto, onToken);
+      }
+    } catch (error) {
+      if (error instanceof APIError) {
+        throw error;
+      }
+      console.error("Chatbot Service Stream Error:", error);
+      throw new APIError(
+        "CHAT_STREAM_SERVICE_ERROR",
+        500,
+        "Failed to process streaming chat request"
+      );
+    }
+  }
+
+  private async handleGuestChatStream(
+    dto: ChatRequestDto,
+    guestId: string | undefined,
+    onToken: (token: string, isComplete: boolean, metadata?: any) => void
+  ): Promise<void> {
+    // Generate guest ID if not provided
+    const currentGuestId = guestId || this.generateGuestId();
+
+    // Get existing guest conversation history for context
+    const existingConversation = this.guestConversations.get(currentGuestId);
+    const conversationHistory = existingConversation
+      ? existingConversation.messages.map((msg) => ({
+          question: msg.question,
+          answer: msg.answer,
+        }))
+      : [];
+
+    let fullResponse = "";
+
+    // Get AI response with streaming and conversation context
+    await this.geminiService.generateTrafficLawResponseStream(
+      dto.message,
+      (token: string) => {
+        fullResponse += token;
+        onToken(token, false);
+      },
+      conversationHistory
+    );
+
+    // Update guest conversation history
+    const existingMessages = existingConversation?.messages || [];
+    const newMessage = {
+      question: dto.message,
+      answer: fullResponse.trim(),
+      timestamp: new Date(),
+    };
+    const updatedMessages = [...existingMessages, newMessage];
+
+    const guestConversation: GuestConversation = {
+      id: currentGuestId,
+      messages: updatedMessages,
+      createdAt: existingConversation?.createdAt || new Date(),
+    };
+
+    // Store updated guest conversation in memory
+    this.guestConversations.set(currentGuestId, guestConversation);
+
+    // Send completion signal
+    onToken("", true, {
+      conversationId: null,
+      messageId: null,
+      isGuest: true,
+      guestSessionId: currentGuestId,
+    });
+  }
+
+  private async handleAuthenticatedChatStream(
+    userId: number,
+    dto: ChatRequestDto,
+    onToken: (token: string, isComplete: boolean, metadata?: any) => void
+  ): Promise<void> {
+    let conversationId = dto.conversationId;
+
+    // If no conversation ID provided, create a new conversation
+    if (!conversationId) {
+      const conversation = await this.conversationRepository.create({
+        userId,
+        title: this.generateConversationTitle(dto.message),
+      });
+      conversationId = conversation.id;
+    } else {
+      // Verify conversation exists and belongs to user
+      const conversation = await this.conversationRepository.findById(
+        conversationId
+      );
+      if (!conversation) {
+        throw new APIError(
+          "CONVERSATION_NOT_FOUND",
+          404,
+          "Conversation not found"
+        );
+      }
+      if (conversation.userId !== userId) {
+        throw new APIError(
+          "UNAUTHORIZED_CONVERSATION",
+          403,
+          "You do not have access to this conversation"
+        );
+      }
+    }
+
+    // Get conversation history for context (last 10 messages)
+    const conversationHistory = await this.getConversationHistory(
+      conversationId,
+      10
+    );
+
+    let fullResponse = "";
+
+    // Get AI response with streaming and conversation context
+    await this.geminiService.generateTrafficLawResponseStream(
+      dto.message,
+      (token: string) => {
+        fullResponse += token;
+        onToken(token, false);
+      },
+      conversationHistory
+    );
+
+    // Save the message to database
+    const message = await this.messageRepository.create({
+      conversationId,
+      question: dto.message,
+      answer: fullResponse.trim(),
+      createdBy: `user_${userId}`,
+    });
+
+    // Send completion signal
+    onToken("", true, {
+      conversationId,
+      messageId: message.id,
+      isGuest: false,
+    });
+  }
+
   private generateGuestId(): string {
     return `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
@@ -317,5 +489,28 @@ export class ChatbotService {
     const title =
       message.length > 50 ? message.substring(0, 47) + "..." : message;
     return title;
+  }
+
+  private async getConversationHistory(
+    conversationId: number,
+    limit: number = 10
+  ): Promise<Array<{ question: string; answer: string }>> {
+    try {
+      const { data: messages } = await this.messageRepository.findAll({
+        page: 1,
+        limit,
+        sortBy: "createdAt",
+        sortOrder: "asc",
+        filters: { conversationId },
+      });
+
+      return messages.map((msg) => ({
+        question: msg.question,
+        answer: msg.answer,
+      }));
+    } catch (error) {
+      console.error("Error fetching conversation history:", error);
+      return [];
+    }
   }
 }
