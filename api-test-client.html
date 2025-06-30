@@ -523,20 +523,20 @@
                         </div>
                         <div class="endpoint-body">
                             <div class="form-group">
-                                <label>Username:</label>
-                                <input type="text" id="register-username" placeholder="Enter username">
-                            </div>
-                            <div class="form-group">
                                 <label>Email:</label>
                                 <input type="email" id="register-email" placeholder="Enter email">
                             </div>
                             <div class="form-group">
-                                <label>Password:</label>
-                                <input type="password" id="register-password" placeholder="Enter password">
+                                <label>First Name:</label>
+                                <input type="text" id="register-firstName" placeholder="Enter first name">
                             </div>
                             <div class="form-group">
-                                <label>Full Name:</label>
-                                <input type="text" id="register-fullname" placeholder="Enter full name">
+                                <label>Last Name:</label>
+                                <input type="text" id="register-lastName" placeholder="Enter last name">
+                            </div>
+                            <div class="form-group">
+                                <label>Password:</label>
+                                <input type="password" id="register-password" placeholder="Enter password">
                             </div>
                             <button class="button" onclick="register()">Register</button>
                             <div class="response" id="register-response" style="display: none;"></div>
@@ -583,12 +583,16 @@
                         </div>
                         <div class="endpoint-body">
                             <div class="form-group">
-                                <label>Username:</label>
-                                <input type="text" id="update-username" placeholder="Enter new username">
+                                <label>Email:</label>
+                                <input type="email" id="update-email" placeholder="Enter new email">
                             </div>
                             <div class="form-group">
-                                <label>Full Name:</label>
-                                <input type="text" id="update-fullname" placeholder="Enter new full name">
+                                <label>First Name:</label>
+                                <input type="text" id="update-firstName" placeholder="Enter new first name">
+                            </div>
+                            <div class="form-group">
+                                <label>Last Name:</label>
+                                <input type="text" id="update-lastName" placeholder="Enter new last name">
                             </div>
                             <button class="button" onclick="updateProfile()">Update Profile</button>
                             <div class="response" id="update-profile-response" style="display: none;"></div>
@@ -781,7 +785,7 @@
             if (authToken && currentUser) {
                 statusElement.className = 'auth-status authenticated';
                 statusText.textContent = 'Authenticated';
-                currentUserElement.textContent = currentUser.username || currentUser.email;
+                currentUserElement.textContent = `${currentUser.firstName} ${currentUser.lastName}` || currentUser.email;
                 tokenStatus.textContent = 'Valid';
             } else {
                 statusElement.className = 'auth-status unauthenticated';
@@ -865,10 +869,10 @@
         // Authentication Functions
         async function register() {
             const data = {
-                username: document.getElementById('register-username').value,
                 email: document.getElementById('register-email').value,
-                password: document.getElementById('register-password').value,
-                fullName: document.getElementById('register-fullname').value
+                firstName: document.getElementById('register-firstName').value,
+                lastName: document.getElementById('register-lastName').value,
+                password: document.getElementById('register-password').value
             };
 
             await makeRequest('POST', '/auth/register', data, 'register-response', false);
@@ -897,8 +901,9 @@
 
         async function updateProfile() {
             const data = {
-                username: document.getElementById('update-username').value,
-                fullName: document.getElementById('update-fullname').value
+                email: document.getElementById('update-email').value,
+                firstName: document.getElementById('update-firstName').value,
+                lastName: document.getElementById('update-lastName').value
             };
 
             // Remove empty fields
