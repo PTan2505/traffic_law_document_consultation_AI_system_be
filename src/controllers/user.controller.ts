@@ -13,7 +13,7 @@ export class UserController {
 
   /**
    * @swagger
-   * /api/v1/users:
+   * /users:
    *   post:
    *     tags: [Users]
    *     summary: Create a new user
@@ -47,7 +47,7 @@ export class UserController {
 
   /**
    * @swagger
-   * /api/v1/users:
+   * /users:
    *   get:
    *     tags: [Users]
    *     summary: Get all users with pagination, sorting, and filtering
@@ -134,7 +134,7 @@ export class UserController {
 
   /**
    * @swagger
-   * /api/v1/users/{id}:
+   * /users/{id}:
    *   get:
    *     tags: [Users]
    *     summary: Get a user by ID
@@ -167,7 +167,7 @@ export class UserController {
 
   /**
    * @swagger
-   * /api/v1/users/{id}:
+   * /users/{id}:
    *   put:
    *     tags: [Users]
    *     summary: Update a user
@@ -209,7 +209,7 @@ export class UserController {
 
   /**
    * @swagger
-   * /api/v1/users/{id}:
+   * /users/{id}:
    *   delete:
    *     tags: [Users]
    *     summary: Delete a user

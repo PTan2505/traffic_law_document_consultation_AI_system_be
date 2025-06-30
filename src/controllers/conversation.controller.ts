@@ -16,7 +16,7 @@ export class ConversationController {
 
   /**
    * @swagger
-   * /api/v1/conversations:
+   * /conversations:
    *   post:
    *     tags: [Conversations]
    *     summary: Create a new conversation
@@ -60,7 +60,7 @@ export class ConversationController {
 
   /**
    * @swagger
-   * /api/v1/conversations:
+   * /conversations:
    *   get:
    *     tags: [Conversations]
    *     summary: Get all conversations for the authenticated user with pagination, sorting, and filtering
@@ -167,7 +167,7 @@ export class ConversationController {
 
   /**
    * @swagger
-   * /api/v1/conversations/{id}:
+   * /conversations/{id}:
    *   get:
    *     tags: [Conversations]
    *     summary: Get a conversation by ID (must be owned by authenticated user)
@@ -219,7 +219,7 @@ export class ConversationController {
 
   /**
    * @swagger
-   * /api/v1/conversations/{id}:
+   * /conversations/{id}:
    *   put:
    *     tags: [Conversations]
    *     summary: Update a conversation
@@ -281,7 +281,7 @@ export class ConversationController {
 
   /**
    * @swagger
-   * /api/v1/conversations/{id}:
+   * /conversations/{id}:
    *   delete:
    *     tags: [Conversations]
    *     summary: Delete a conversation

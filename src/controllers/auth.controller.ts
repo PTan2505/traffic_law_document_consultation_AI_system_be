@@ -17,7 +17,7 @@ export class AuthController {
 
   /**
    * @swagger
-   * /api/v1/auth/register:
+   * /auth/register:
    *   post:
    *     tags: [Authentication]
    *     summary: Register a new user
@@ -51,7 +51,7 @@ export class AuthController {
 
   /**
    * @swagger
-   * /api/v1/auth/login:
+   * /auth/login:
    *   post:
    *     tags: [Authentication]
    *     summary: Login user
@@ -83,7 +83,7 @@ export class AuthController {
 
   /**
    * @swagger
-   * /api/v1/auth/profile:
+   * /auth/profile:
    *   get:
    *     tags: [Authentication]
    *     summary: Get current user profile
@@ -115,7 +115,7 @@ export class AuthController {
 
   /**
    * @swagger
-   * /api/v1/auth/change-password:
+   * /auth/change-password:
    *   post:
    *     tags: [Authentication]
    *     summary: Change user password
@@ -160,7 +160,7 @@ export class AuthController {
 
   /**
    * @swagger
-   * /api/v1/auth/logout:
+   * /auth/logout:
    *   post:
    *     tags: [Authentication]
    *     summary: Logout user (client-side token removal)
@@ -190,7 +190,7 @@ export class AuthController {
 
   /**
    * @swagger
-   * /api/v1/auth/profile:
+   * /auth/profile:
    *   put:
    *     tags: [Authentication]
    *     summary: Update user profile
