@@ -43,9 +43,6 @@ export class AuthService {
         isActive: true,
       });
 
-      // Generate JWT token
-      const token = this.generateToken(user.id, user.email);
-
       return plainToClass(
         AuthResponseDto,
         {
@@ -57,7 +54,6 @@ export class AuthService {
             isAdmin: user.isAdmin,
             isActive: user.isActive,
           },
-          token,
           message: "Registration successful",
         },
         { excludeExtraneousValues: true }
