@@ -22,7 +22,7 @@ export class GeminiService {
   ): Promise<string> {
     try {
       const model = this.genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         systemInstruction: `You are a helpful assistant who is an expert in Vietnamese traffic laws.
 Always explain answers clearly and in detail, using real articles and examples from Vietnamese traffic regulations.
 If the question is not related to Vietnamese traffic law, respond with:

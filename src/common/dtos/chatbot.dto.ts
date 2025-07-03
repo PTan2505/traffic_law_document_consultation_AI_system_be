@@ -69,6 +69,10 @@ export class ChatRequestDto {
  *           type: boolean
  *           description: Whether this was a guest conversation
  *           example: false
+ *         isNewConversation:
+ *           type: boolean
+ *           description: Whether a new conversation was created for this message
+ *           example: true
  */
 export class ChatResponseDto {
   @Expose()
@@ -85,4 +89,7 @@ export class ChatResponseDto {
 
   @Expose()
   isGuest: boolean;
+
+  @Expose()
+  isNewConversation?: boolean;
 }

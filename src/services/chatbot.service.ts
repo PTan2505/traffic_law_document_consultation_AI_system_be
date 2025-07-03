@@ -116,6 +116,7 @@ export class ChatbotService {
     dto: ChatRequestDto
   ): Promise<ChatResponseDto> {
     let conversationId = dto.conversationId;
+    let isNewConversation = false;
 
     // If no conversation ID provided, create a new conversation
     if (!conversationId) {
@@ -124,6 +125,7 @@ export class ChatbotService {
         title: this.generateConversationTitle(dto.message),
       });
       conversationId = conversation.id;
+      isNewConversation = true;
     } else {
       // Verify conversation exists and belongs to user
       const conversation = await this.conversationRepository.findById(
@@ -173,6 +175,7 @@ export class ChatbotService {
         messageId: message.id,
         timestamp: new Date(),
         isGuest: false,
+        isNewConversation,
       },
       { excludeExtraneousValues: true }
     );
@@ -406,6 +409,7 @@ export class ChatbotService {
     onToken: (token: string, isComplete: boolean, metadata?: any) => void
   ): Promise<void> {
     let conversationId = dto.conversationId;
+    let isNewConversation = false;
 
     // If no conversation ID provided, create a new conversation
     if (!conversationId) {
@@ -414,6 +418,7 @@ export class ChatbotService {
         title: this.generateConversationTitle(dto.message),
       });
       conversationId = conversation.id;
+      isNewConversation = true;
     } else {
       // Verify conversation exists and belongs to user
       const conversation = await this.conversationRepository.findById(
@@ -466,6 +471,7 @@ export class ChatbotService {
       conversationId,
       messageId: message.id,
       isGuest: false,
+      isNewConversation,
     });
   }
 

@@ -1082,11 +1082,25 @@
                                             streamingStatus.className = 'streaming-status active';
                                             document.getElementById('status-text').textContent = 'Complete ✓';
 
-                                            if (data.metadata?.guestSessionId) {
-                                                guestSessionId = data.metadata.guestSessionId;
-                                                localStorage.setItem('guestSessionId', guestSessionId);
-                                                document.getElementById('chat-guest-session').value = guestSessionId;
-                                                updateGuestSession();
+                                            // Handle metadata from completion
+                                            if (data.metadata) {
+                                                // Update guest session if provided
+                                                if (data.metadata.guestSessionId) {
+                                                    guestSessionId = data.metadata.guestSessionId;
+                                                    localStorage.setItem('guestSessionId', guestSessionId);
+                                                    document.getElementById('chat-guest-session').value = guestSessionId;
+                                                    updateGuestSession();
+                                                }
+
+                                                // Auto-populate conversation ID if new conversation was created
+                                                if (data.metadata.conversationId && data.metadata.isNewConversation) {
+                                                    document.getElementById('chat-conversation-id').value = data.metadata.conversationId;
+                                                    console.log('New conversation created with ID:', data.metadata.conversationId);
+
+                                                    // Show a subtle notification
+                                                    const statusText = document.getElementById('status-text');
+                                                    statusText.textContent = `Complete ✓ (New conversation #${data.metadata.conversationId})`;
+                                                }
                                             }
                                             break;
 
@@ -1161,6 +1175,12 @@
                 updateGuestSession();
 
                 console.log('Guest session updated:', guestSessionId);
+            }
+
+            // Auto-populate conversation ID if new conversation was created
+            if (response.status === 200 && response.data.conversationId && response.data.isNewConversation) {
+                document.getElementById('chat-conversation-id').value = response.data.conversationId;
+                console.log('New conversation created with ID:', response.data.conversationId);
             }
         }
 

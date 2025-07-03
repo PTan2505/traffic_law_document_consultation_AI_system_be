@@ -335,6 +335,12 @@ export class ChatbotController {
    *       Send a message to the AI assistant with streaming response (like ChatGPT).
    *       Returns Server-Sent Events (SSE) stream with tokens sent one by one.
    *       Works for both guest and authenticated users.
+   *
+   *       **SSE Event Types:**
+   *       - `start`: Initial event with guest session ID
+   *       - `token`: Each AI response token
+   *       - `complete`: Final event with metadata (including conversationId for new conversations)
+   *       - `error`: Error event
    *     parameters:
    *       - in: header
    *         name: X-Guest-ID
@@ -354,22 +360,44 @@ export class ChatbotController {
    *           text/event-stream:
    *             schema:
    *               type: string
+   *               description: |
+   *                 Server-Sent Events with the following structure:
+   *
+   *                 **Start Event:**
+   *                 ```
+   *                 data: {"type": "start", "guestSessionId": "guest_123", "timestamp": "2025-01-01T00:00:00Z"}
+   *                 ```
+   *
+   *                 **Token Events:**
+   *                 ```
+   *                 data: {"type": "token", "token": "Hello", "timestamp": "2025-01-01T00:00:00Z"}
+   *                 ```
+   *
+   *                 **Completion Event:**
+   *                 ```
+   *                 data: {"type": "complete", "metadata": {"conversationId": 123, "messageId": 456, "isGuest": false, "isNewConversation": true}, "timestamp": "2025-01-01T00:00:00Z"}
+   *                 ```
+   *
+   *                 **Error Event:**
+   *                 ```
+   *                 data: {"type": "error", "message": "Error description", "timestamp": "2025-01-01T00:00:00Z"}
+   *                 ```
    *       400:
    *         description: Bad request - Invalid input
    *       500:
    *         description: AI service error
    */
   chatStream = async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user?.userId || null;
+    let guestId =
+      (req.headers["x-guest-id"] as string) || req.body.guestSessionId;
+
+    // If this is a guest request and no guest ID was provided, generate one
+    if (!userId && !guestId) {
+      guestId = this.generateGuestId();
+    }
+
     try {
-      const userId = req.user?.userId || null;
-      let guestId =
-        (req.headers["x-guest-id"] as string) || req.body.guestSessionId;
-
-      // If this is a guest request and no guest ID was provided, generate one
-      if (!userId && !guestId) {
-        guestId = this.generateGuestId();
-      }
-
       const dto = plainToClass(ChatRequestDto, req.body);
 
       // Set up SSE headers
@@ -421,6 +449,7 @@ export class ChatbotController {
         type: "error",
         message: error instanceof Error ? error.message : "Unknown error",
         timestamp: new Date().toISOString(),
+        ...(guestId && { guestSessionId: guestId }),
       };
       res.write(`data: ${JSON.stringify(errorData)}\n\n`);
       res.end();
