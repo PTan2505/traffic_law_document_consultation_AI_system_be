@@ -5,6 +5,7 @@ import messagesRouter from "./messages";
 import userRouter from "./user.routes";
 import authRouter from "./auth.routes";
 import chatbotRouter from "./chatbot.routes";
+import documentRouter from "./document.routes";
 
 const apiRouter = Router();
 const API_PREFIX = ""; // Root path - no prefix needed
@@ -16,6 +17,7 @@ apiRouter.use(`/chatbot`, chatbotRouter);
 apiRouter.use(`/conversations`, conversationRouter);
 apiRouter.use(`/messages`, messagesRouter);
 apiRouter.use(`/users`, userRouter);
+apiRouter.use(`/documents`, documentRouter);
 
 // Add other feature routes here as your application grows
 // apiRouter.use(`${API_PREFIX}/products`, productRoutes);

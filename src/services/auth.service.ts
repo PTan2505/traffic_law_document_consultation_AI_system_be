@@ -94,7 +94,7 @@ export class AuthService {
       }
 
       // Generate JWT token
-      const token = this.generateToken(user.id, user.email);
+      const token = this.generateToken(user.id, user.email, user.isAdmin);
 
       return plainToClass(
         AuthResponseDto,
@@ -241,16 +241,25 @@ export class AuthService {
     }
   }
 
-  private generateToken(userId: number, email: string): string {
-    const payload = { userId, email };
+  private generateToken(
+    userId: number,
+    email: string,
+    isAdmin: boolean
+  ): string {
+    const payload = { userId, email, isAdmin };
     return jwt.sign(payload, this.jwtSecret, { expiresIn: "24h" });
   }
 
-  verifyToken(token: string): { userId: number; email: string } {
+  verifyToken(token: string): {
+    userId: number;
+    email: string;
+    isAdmin: boolean;
+  } {
     try {
       const decoded = jwt.verify(token, this.jwtSecret) as {
         userId: number;
         email: string;
+        isAdmin: boolean;
       };
       return decoded;
     } catch (error) {

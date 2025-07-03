@@ -9,6 +9,7 @@ declare global {
       user?: {
         userId: number;
         email: string;
+        isAdmin: boolean;
       };
     }
   }
@@ -43,6 +44,7 @@ export class AuthMiddleware {
       req.user = {
         userId: decoded.userId,
         email: decoded.email,
+        isAdmin: decoded.isAdmin,
       };
 
       next();
@@ -71,9 +73,14 @@ export class AuthMiddleware {
       });
     }
 
-    // You might want to fetch user details to check admin status
-    // For now, we'll assume you have this information in the token
-    // In a real app, you might want to fetch user from database
+    // Check if user is admin
+    if (!req.user.isAdmin) {
+      return res.status(403).json({
+        status: "error",
+        message: "Admin access required",
+      });
+    }
+
     next();
   };
 
@@ -89,6 +96,7 @@ export class AuthMiddleware {
           req.user = {
             userId: decoded.userId,
             email: decoded.email,
+            isAdmin: decoded.isAdmin,
           };
         }
       }

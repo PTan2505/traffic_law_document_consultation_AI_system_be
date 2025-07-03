@@ -1,8 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { APIError } from "../common/errors/app-errors";
+import { DocumentService } from "./document.service";
 
 export class GeminiService {
   private genAI: GoogleGenerativeAI;
+  private documentService: DocumentService;
 
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -14,6 +16,7 @@ export class GeminiService {
       );
     }
     this.genAI = new GoogleGenerativeAI(apiKey);
+    this.documentService = new DocumentService();
   }
 
   async sendToGemini(
@@ -21,14 +24,32 @@ export class GeminiService {
     conversationHistory: Array<{ question: string; answer: string }> = []
   ): Promise<string> {
     try {
-      const model = this.genAI.getGenerativeModel({
-        model: "gemini-2.5-flash",
-        systemInstruction: `You are a helpful assistant who is an expert in Vietnamese traffic laws.
+      // Get active documents content from files
+      const activeDocuments =
+        await this.documentService.getActiveDocumentsWithContent();
+      const documentContent = activeDocuments
+        .map(
+          (doc: any) => `Document: ${doc.title}\nContent: ${doc.content || ""}`
+        )
+        .join("\n\n");
+
+      const systemInstruction = `You are a helpful assistant who is an expert in Vietnamese traffic laws.
 Always explain answers clearly and in detail, using real articles and examples from Vietnamese traffic regulations.
 If the question is not related to Vietnamese traffic law, respond with:
 "I'm sorry, I can only assist with questions related to Vietnamese traffic law."
 
-You have access to the conversation history to provide contextual responses. Use this context to better understand the user's questions and provide more relevant answers.`,
+IMPORTANT GREETING RULES:
+- Only say "Chào bạn," (Hello) for the FIRST question when there is no conversation history
+- For follow-up questions in an ongoing conversation, do NOT use greetings - start directly with the answer
+- Use conversation history to provide contextual responses and understand the user's questions better
+
+${documentContent ? `Reference Documents:\n${documentContent}` : ""}
+
+Please use the information from the reference documents when answering questions about Vietnamese traffic laws. Always cite the specific document or article when providing legal information.`;
+
+      const model = this.genAI.getGenerativeModel({
+        model: "gemini-2.5-flash",
+        systemInstruction: systemInstruction,
       });
 
       // Build conversation history for context
@@ -75,14 +96,32 @@ You have access to the conversation history to provide contextual responses. Use
     conversationHistory: Array<{ question: string; answer: string }> = []
   ): Promise<void> {
     try {
-      const model = this.genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
-        systemInstruction: `You are a helpful assistant who is an expert in Vietnamese traffic laws.
+      // Get active documents content from files
+      const activeDocuments =
+        await this.documentService.getActiveDocumentsWithContent();
+      const documentContent = activeDocuments
+        .map(
+          (doc: any) => `Document: ${doc.title}\nContent: ${doc.content || ""}`
+        )
+        .join("\n\n");
+
+      const systemInstruction = `You are a helpful assistant who is an expert in Vietnamese traffic laws.
 Always explain answers clearly and in detail, using real articles and examples from Vietnamese traffic regulations.
 If the question is not related to Vietnamese traffic law, respond with:
 "I'm sorry, I can only assist with questions related to Vietnamese traffic law."
 
-You have access to the conversation history to provide contextual responses. Use this context to better understand the user's questions and provide more relevant answers.`,
+IMPORTANT GREETING RULES:
+- Only say "Chào bạn," (Hello) for the FIRST question when there is no conversation history
+- For follow-up questions in an ongoing conversation, do NOT use greetings - start directly with the answer
+- Use conversation history to provide contextual responses and understand the user's questions better
+
+${documentContent ? `Reference Documents:\n${documentContent}` : ""}
+
+Please use the information from the reference documents when answering questions about Vietnamese traffic laws. Always cite the specific document or article when providing legal information.`;
+
+      const model = this.genAI.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        systemInstruction: systemInstruction,
       });
 
       // Build conversation history for context

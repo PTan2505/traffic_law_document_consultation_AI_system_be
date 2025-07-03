@@ -2,11 +2,20 @@ import "reflect-metadata";
 import express from "express";
 import expressApp from "./app";
 import dotenv from "dotenv";
+import { AdminSeeder } from "./utils/admin-seeder";
 dotenv.config();
 
 const StartServer = async () => {
   const app = express();
   await expressApp(app);
+
+  // Create initial admin user
+  try {
+    await AdminSeeder.createInitialAdmin();
+  } catch (error) {
+    console.warn("⚠️  Warning: Could not create initial admin user:", error);
+  }
+
   const port = process.env.PORT || 3000;
 
   // Handle server startup more gracefully
@@ -17,7 +26,9 @@ const StartServer = async () => {
 
     server.on("error", (err: any) => {
       if (err.code === "EADDRINUSE") {
-        console.error(`Port ${port} is already in use. Please make sure no other instance is running, or use a different port.`);
+        console.error(
+          `Port ${port} is already in use. Please make sure no other instance is running, or use a different port.`
+        );
       } else {
         console.error("Server error:", err.message);
       }
@@ -46,7 +57,7 @@ const StartServer = async () => {
   }
 };
 
-StartServer().catch(err => {
+StartServer().catch((err) => {
   console.error("Startup error:", err);
   process.exit(1);
 });

@@ -740,6 +740,167 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Document Management Section -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection('documents')">
+                    <h2>📄 Document Management <span class="toggle">▼</span></h2>
+                </div>
+                <div class="section-content" id="documents">
+                    <!-- Upload Document -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method post">POST</span>
+                            <span>/documents/upload</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <div class="form-group">
+                                <label>Title:</label>
+                                <input type="text" id="document-title" placeholder="Enter document title">
+                            </div>
+                            <div class="form-group">
+                                <label>Description:</label>
+                                <textarea id="document-description" placeholder="Enter document description"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>File (TXT or DOCX):</label>
+                                <input type="file" id="document-file" accept=".txt,.docx">
+                            </div>
+                            <button class="button" onclick="uploadDocument()">Upload Document</button>
+                            <div class="response" id="upload-document-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Get Documents -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span>/documents</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <div class="form-group">
+                                <label>Page:</label>
+                                <input type="number" id="documents-page" value="1" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Limit:</label>
+                                <input type="number" id="documents-limit" value="10" min="1" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Type:</label>
+                                <select id="documents-type">
+                                    <option value="">All Types</option>
+                                    <option value="txt">TXT</option>
+                                    <option value="docx">DOCX</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Active Only:</label>
+                                <select id="documents-active">
+                                    <option value="">All Documents</option>
+                                    <option value="true">Active Only</option>
+                                    <option value="false">Inactive Only</option>
+                                </select>
+                            </div>
+                            <button class="button" onclick="getDocuments()">Get Documents</button>
+                            <div class="response" id="get-documents-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Update Document -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method put">PUT</span>
+                            <span>/documents/:id</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <div class="form-group">
+                                <label>Document ID:</label>
+                                <input type="number" id="update-document-id" placeholder="Enter document ID">
+                            </div>
+                            <div class="form-group">
+                                <label>Title:</label>
+                                <input type="text" id="update-document-title" placeholder="Enter new title">
+                            </div>
+                            <div class="form-group">
+                                <label>Description:</label>
+                                <textarea id="update-document-description"
+                                    placeholder="Enter new description"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Active:</label>
+                                <select id="update-document-active">
+                                    <option value="">No Change</option>
+                                    <option value="true">Active</option>
+                                    <option value="false">Inactive</option>
+                                </select>
+                            </div>
+                            <button class="button" onclick="updateDocument()">Update Document</button>
+                            <div class="response" id="update-document-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Set Active Documents -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method post">POST</span>
+                            <span>/documents/set-active</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <div class="form-group">
+                                <label>Document IDs (comma-separated):</label>
+                                <input type="text" id="active-document-ids" placeholder="e.g., 1,2,3">
+                            </div>
+                            <button class="button" onclick="setActiveDocuments()">Set Active Documents</button>
+                            <div class="response" id="set-active-documents-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Get Active Documents -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span>/documents/active</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <button class="button" onclick="getActiveDocuments()">Get Active Documents</button>
+                            <div class="response" id="get-active-documents-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Document -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method delete">DELETE</span>
+                            <span>/documents/:id</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <div class="form-group">
+                                <label>Document ID:</label>
+                                <input type="number" id="delete-document-id" placeholder="Enter document ID">
+                            </div>
+                            <button class="button" onclick="deleteDocument()">Delete Document</button>
+                            <div class="response" id="delete-document-response" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Search Documents -->
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span>/documents/search/:query</span>
+                        </div>
+                        <div class="endpoint-body">
+                            <div class="form-group">
+                                <label>Search Query:</label>
+                                <input type="text" id="search-query" placeholder="Enter search terms">
+                            </div>
+                            <button class="button" onclick="searchDocuments()">Search Documents</button>
+                            <div class="response" id="search-documents-response" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1227,6 +1388,138 @@
         async function getConversationHistory() {
             const conversationId = document.getElementById('conversation-history-id').value;
             await makeRequest('GET', `/chatbot/conversations/${conversationId}/history`, null, 'conversation-history-response');
+        }
+
+        // Document Management Functions
+        async function uploadDocument() {
+            const title = document.getElementById('document-title').value;
+            const description = document.getElementById('document-description').value;
+            const fileInput = document.getElementById('document-file');
+            const file = fileInput.files[0];
+
+            if (!title || !file) {
+                alert('Please provide a title and select a file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('title', title);
+            if (description) formData.append('description', description);
+            formData.append('file', file);
+
+            try {
+                const options = {
+                    method: 'POST',
+                    headers: {}
+                };
+
+                if (authToken) {
+                    options.headers['Authorization'] = `Bearer ${authToken}`;
+                }
+
+                const response = await fetch(`${baseUrl}/documents/upload`, {
+                    ...options,
+                    body: formData
+                });
+
+                const responseData = await response.json();
+                displayResponse('upload-document-response', response.status, responseData);
+
+                if (response.status === 201) {
+                    // Clear form
+                    document.getElementById('document-title').value = '';
+                    document.getElementById('document-description').value = '';
+                    document.getElementById('document-file').value = '';
+                }
+            } catch (error) {
+                displayResponse('upload-document-response', 0, { error: error.message });
+            }
+        }
+
+        async function getDocuments() {
+            const page = document.getElementById('documents-page').value;
+            const limit = document.getElementById('documents-limit').value;
+            const type = document.getElementById('documents-type').value;
+            const isActive = document.getElementById('documents-active').value;
+
+            const params = new URLSearchParams();
+            if (page) params.append('page', page);
+            if (limit) params.append('limit', limit);
+            if (type) params.append('type', type);
+            if (isActive) params.append('isActive', isActive);
+
+            const queryString = params.toString();
+            const endpoint = `/documents${queryString ? '?' + queryString : ''}`;
+
+            await makeRequest('GET', endpoint, null, 'get-documents-response');
+        }
+
+        async function updateDocument() {
+            const id = document.getElementById('update-document-id').value;
+            const title = document.getElementById('update-document-title').value;
+            const description = document.getElementById('update-document-description').value;
+            const isActive = document.getElementById('update-document-active').value;
+
+            if (!id) {
+                alert('Please provide a document ID');
+                return;
+            }
+
+            const data = {};
+            if (title) data.title = title;
+            if (description) data.description = description;
+            if (isActive !== '') data.isActive = isActive === 'true';
+
+            await makeRequest('PUT', `/documents/${id}`, data, 'update-document-response');
+        }
+
+        async function setActiveDocuments() {
+            const idsString = document.getElementById('active-document-ids').value;
+
+            if (!idsString) {
+                alert('Please provide document IDs');
+                return;
+            }
+
+            const documentIds = idsString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+
+            if (documentIds.length === 0) {
+                alert('Please provide valid document IDs');
+                return;
+            }
+
+            const data = { documentIds };
+            await makeRequest('POST', '/documents/set-active', data, 'set-active-documents-response');
+        }
+
+        async function getActiveDocuments() {
+            await makeRequest('GET', '/documents/active', null, 'get-active-documents-response');
+        }
+
+        async function deleteDocument() {
+            const id = document.getElementById('delete-document-id').value;
+
+            if (!id) {
+                alert('Please provide a document ID');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete this document?')) {
+                return;
+            }
+
+            await makeRequest('DELETE', `/documents/${id}`, null, 'delete-document-response');
+        }
+
+        async function searchDocuments() {
+            const query = document.getElementById('search-query').value;
+
+            if (!query) {
+                alert('Please provide a search query');
+                return;
+            }
+
+            await makeRequest('GET', `/documents/search/${encodeURIComponent(query)}`, null, 'search-documents-response');
         }
 
         // Load saved base URL

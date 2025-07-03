@@ -25,6 +25,7 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   conversations Conversation[]
+  documents     Document[] // Documents uploaded by this admin user
 }
 
 model Conversation {
@@ -53,10 +54,21 @@ model Message {
 }
 
 model Document {
-  id        Int      @id @default(autoincrement())
-  path      String
-  createdAt DateTime
-  createdBy String?
-  updatedAt DateTime
-  updatedBy String?
+  id               Int      @id @default(autoincrement())
+  title            String   @db.VarChar(255)
+  filename         String   @db.VarChar(255) // UUID-based filename on disk
+  originalFilename String   @db.VarChar(255) // Original filename from upload
+  path             String   @db.VarChar(500)
+  type             String   @db.VarChar(10) // 'txt' or 'docx'
+  size             Int      // File size in bytes
+  isActive         Boolean  @default(false) // Whether this document is currently used by chatbot
+  description      String?  @db.Text
+  uploadedBy       Int      // Admin user ID who uploaded
+  uploader         User     @relation(fields: [uploadedBy], references: [id])
+  createdAt        DateTime @default(now())
+  createdBy        String?
+  updatedAt        DateTime @updatedAt
+  updatedBy        String?
+
+  @@map("documents")
 }
