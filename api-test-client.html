@@ -659,6 +659,25 @@
                                 <textarea id="chat-message"
                                     placeholder="Ask about Vietnamese traffic laws..."></textarea>
                             </div>
+
+                            <!-- RAG Test Buttons -->
+                            <div class="form-group">
+                                <label>🧪 RAG Test Queries:</label>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                                    <button class="button"
+                                        style="background: #28a745; font-size: 12px; padding: 8px 12px;"
+                                        onclick="testPenaltyQuery()">📚 Penalty Query (Full Docs)</button>
+                                    <button class="button"
+                                        style="background: #17a2b8; font-size: 12px; padding: 8px 12px;"
+                                        onclick="testGeneralQuery()">🔍 General Query (RAG)</button>
+                                    <button class="button"
+                                        style="background: #6f42c1; font-size: 12px; padding: 8px 12px;"
+                                        onclick="testGreeting()">👋 Greeting Test</button>
+                                    <button class="button"
+                                        style="background: #fd7e14; font-size: 12px; padding: 8px 12px;"
+                                        onclick="testEnglishQuery()">🇬🇧 English Query</button>
+                                </div>
+                            </div>
                             <div class="form-group">
                                 <label>Guest Session ID (Optional for guest mode):</label>
                                 <input type="text" id="chat-guest-session" placeholder="Leave empty for new session">
@@ -1543,6 +1562,27 @@
 
             // Fill chat message
             document.getElementById('chat-message').value = 'Tôi có thể lái xe máy khi chưa đủ 18 tuổi không?';
+        }
+
+        // RAG Test Functions
+        function testPenaltyQuery() {
+            document.getElementById('chat-message').value = 'Vượt đèn đỏ bị phạt bao nhiêu tiền?';
+            console.log('RAG Test: Penalty query loaded (should use full documents)');
+        }
+
+        function testGeneralQuery() {
+            document.getElementById('chat-message').value = 'Tôi có thể lái xe máy không?';
+            console.log('RAG Test: General query loaded (should use RAG chunks)');
+        }
+
+        function testGreeting() {
+            document.getElementById('chat-message').value = 'Xin chào';
+            console.log('RAG Test: Greeting loaded (should respond with greeting)');
+        }
+
+        function testEnglishQuery() {
+            document.getElementById('chat-message').value = 'What is the speed limit on highways in Vietnam?';
+            console.log('RAG Test: English query loaded (should respond in English)');
         }
 
         // Auto-fill test data on page load for development

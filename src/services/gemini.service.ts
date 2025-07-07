@@ -1,10 +1,28 @@
+// Main Gemini Service - Refactored and Modular
+
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { APIError } from "../common/errors/app-errors";
 import { DocumentService } from "./document.service";
 
+// Import modular components
+import {
+  DocumentChunk,
+  DocumentCache,
+  ConversationMessage,
+  DEFAULT_GEMINI_CONFIG,
+} from "./gemini/types";
+import { VietnameseTextProcessor } from "./gemini/vietnamese-processor";
+import { DocumentProcessor } from "./gemini/document-processor";
+import { LegalAnalyzer } from "./gemini/legal-analyzer";
+import { TrafficLawDetector } from "./gemini/traffic-law-detector";
+import { RAGProcessor } from "./gemini/rag-processor";
+import { ResponseGenerator } from "./gemini/response-generator";
+
 export class GeminiService {
   private genAI: GoogleGenerativeAI;
   private documentService: DocumentService;
+  private documentCache: DocumentCache | null = null;
+  private documentProcessor: DocumentProcessor;
 
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -15,65 +33,181 @@ export class GeminiService {
         "Gemini API key is required"
       );
     }
+
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.documentService = new DocumentService();
+    this.documentProcessor = new DocumentProcessor(
+      DEFAULT_GEMINI_CONFIG.chunkSize,
+      DEFAULT_GEMINI_CONFIG.chunkOverlap
+    );
+
+    // Set up dependency injection
+    this.documentService.setGeminiService(this);
+
+    // Initialize document cache on startup
+    this.initializeDocumentCache();
   }
 
-  async sendToGemini(
-    userPrompt: string,
-    conversationHistory: Array<{ question: string; answer: string }> = []
-  ): Promise<string> {
+  /**
+   * Initialize document cache on startup
+   */
+  private async initializeDocumentCache(): Promise<void> {
     try {
-      // Get active documents content from files
+      await this.refreshDocumentCache();
+    } catch (error) {
+      console.error("Failed to initialize document cache:", error);
+    }
+  }
+
+  /**
+   * Refresh document cache from database
+   */
+  private async refreshDocumentCache(): Promise<void> {
+    try {
       const activeDocuments =
         await this.documentService.getActiveDocumentsWithContent();
-      const documentContent = activeDocuments
+      this.documentCache =
+        this.documentProcessor.createDocumentCache(activeDocuments);
+
+      console.log(
+        `Document cache refreshed with ${this.documentCache.documents.length} documents`
+      );
+    } catch (error) {
+      console.error("Failed to refresh document cache:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Build system instruction with RAG or full document content
+   */
+  private async buildSystemInstruction(userPrompt: string): Promise<string> {
+    let documentContent = "";
+
+    // Check if this is a legal/penalty query that needs comprehensive answer
+    if (LegalAnalyzer.isLegalPenaltyQuery(userPrompt)) {
+      // For legal queries, use full document content to ensure comprehensive answers
+      const activeDocuments =
+        await this.documentService.getActiveDocumentsWithContent();
+      documentContent = activeDocuments
         .map(
           (doc: any) => `Document: ${doc.title}\nContent: ${doc.content || ""}`
         )
         .join("\n\n");
 
-      const systemInstruction = `You are a helpful assistant who is an expert in Vietnamese traffic laws.
-Always explain answers clearly and in detail, using real articles and examples from Vietnamese traffic regulations.
-If the question is not related to Vietnamese traffic law, respond with:
-"I'm sorry, I can only assist with questions related to Vietnamese traffic law."
+      console.log("Using full document content for legal query");
+    } else {
+      // For general queries, use RAG to retrieve relevant chunks
+      const relevantChunks = await this.retrieveRelevantChunks(userPrompt, 8);
 
-IMPORTANT GREETING RULES:
-- Only say "Chào bạn," (Hello) for the FIRST question when there is no conversation history
-- For follow-up questions in an ongoing conversation, do NOT use greetings - start directly with the answer
-- Use conversation history to provide contextual responses and understand the user's questions better
+      if (relevantChunks.length > 0) {
+        documentContent = relevantChunks
+          .map(
+            (chunk) =>
+              `Document: ${chunk.documentTitle}\nContent: ${chunk.content}`
+          )
+          .join("\n\n");
 
-${documentContent ? `Reference Documents:\n${documentContent}` : ""}
+        console.log(`Using RAG with ${relevantChunks.length} relevant chunks`);
+      } else {
+        // Fallback to full content if no relevant chunks found
+        const activeDocuments =
+          await this.documentService.getActiveDocumentsWithContent();
+        documentContent = activeDocuments
+          .map(
+            (doc: any) =>
+              `Document: ${doc.title}\nContent: ${doc.content || ""}`
+          )
+          .join("\n\n");
 
-Please use the information from the reference documents when answering questions about Vietnamese traffic laws. Always cite the specific document or article when providing legal information.`;
+        console.log(
+          "Fallback to full document content - no relevant chunks found"
+        );
+      }
+    }
+
+    return ResponseGenerator.buildSystemInstruction(
+      userPrompt,
+      documentContent
+    );
+  }
+
+  /**
+   * Retrieve relevant chunks using RAG with semantic understanding
+   */
+  private async retrieveRelevantChunks(
+    query: string,
+    maxChunks: number = 5
+  ): Promise<DocumentChunk[]> {
+    // Ensure cache is available
+    if (!this.documentCache) {
+      await this.refreshDocumentCache();
+    }
+
+    if (!this.documentCache || this.documentCache.documents.length === 0) {
+      console.log("No documents in cache for RAG retrieval");
+      return [];
+    }
+
+    // Check if this is a legal article search query
+    const isLegalArticleSearch = LegalAnalyzer.isLegalArticleSearchQuery(query);
+    if (isLegalArticleSearch) {
+      console.log("Legal article search detected");
+      maxChunks = 15; // Increase chunk limit for legal article searches
+    }
+
+    // Extract keywords from query
+    const keywords = LegalAnalyzer.extractLegalKeywords(query);
+    console.log(`Extracted keywords for query "${query}":`, keywords);
+
+    // Get all chunks from cache
+    const allChunks = this.documentProcessor.getAllChunks(this.documentCache);
+
+    // Use RAG processor to retrieve relevant chunks
+    const selectedChunks = RAGProcessor.retrieveRelevantChunks(
+      allChunks,
+      query,
+      keywords,
+      maxChunks
+    );
+
+    console.log(`Selected ${selectedChunks.length} chunks for RAG retrieval`);
+    return selectedChunks;
+  }
+
+  /**
+   * Public method to refresh document cache
+   */
+  async refreshCache(): Promise<void> {
+    await this.refreshDocumentCache();
+  }
+
+  /**
+   * Send message to Gemini API
+   */
+  async sendToGemini(
+    userPrompt: string,
+    conversationHistory: ConversationMessage[] = []
+  ): Promise<string> {
+    try {
+      const systemInstruction = await this.buildSystemInstruction(userPrompt);
 
       const model = this.genAI.getGenerativeModel({
-        model: "gemini-2.5-flash",
+        model: DEFAULT_GEMINI_CONFIG.model,
         systemInstruction: systemInstruction,
       });
 
       // Build conversation history for context
-      const chatHistory = [];
-
-      // Add conversation history
-      for (const msg of conversationHistory) {
-        chatHistory.push(
-          {
-            role: "user",
-            parts: [{ text: msg.question }],
-          },
-          {
-            role: "model",
-            parts: [{ text: msg.answer }],
-          }
-        );
-      }
+      const chatHistory = conversationHistory.flatMap((msg) => [
+        { role: "user" as const, parts: [{ text: msg.question }] },
+        { role: "model" as const, parts: [{ text: msg.answer }] },
+      ]);
 
       const chat = model.startChat({
         history: chatHistory,
         generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1000,
+          temperature: DEFAULT_GEMINI_CONFIG.temperature,
+          maxOutputTokens: DEFAULT_GEMINI_CONFIG.maxOutputTokens,
         },
       });
 
@@ -90,62 +224,33 @@ Please use the information from the reference documents when answering questions
     }
   }
 
+  /**
+   * Send streaming message to Gemini API
+   */
   async sendToGeminiStream(
     userPrompt: string,
     onToken: (token: string) => void,
-    conversationHistory: Array<{ question: string; answer: string }> = []
+    conversationHistory: ConversationMessage[] = []
   ): Promise<void> {
     try {
-      // Get active documents content from files
-      const activeDocuments =
-        await this.documentService.getActiveDocumentsWithContent();
-      const documentContent = activeDocuments
-        .map(
-          (doc: any) => `Document: ${doc.title}\nContent: ${doc.content || ""}`
-        )
-        .join("\n\n");
-
-      const systemInstruction = `You are a helpful assistant who is an expert in Vietnamese traffic laws.
-Always explain answers clearly and in detail, using real articles and examples from Vietnamese traffic regulations.
-If the question is not related to Vietnamese traffic law, respond with:
-"I'm sorry, I can only assist with questions related to Vietnamese traffic law."
-
-IMPORTANT GREETING RULES:
-- Only say "Chào bạn," (Hello) for the FIRST question when there is no conversation history
-- For follow-up questions in an ongoing conversation, do NOT use greetings - start directly with the answer
-- Use conversation history to provide contextual responses and understand the user's questions better
-
-${documentContent ? `Reference Documents:\n${documentContent}` : ""}
-
-Please use the information from the reference documents when answering questions about Vietnamese traffic laws. Always cite the specific document or article when providing legal information.`;
+      const systemInstruction = await this.buildSystemInstruction(userPrompt);
 
       const model = this.genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
+        model: DEFAULT_GEMINI_CONFIG.model,
         systemInstruction: systemInstruction,
       });
 
       // Build conversation history for context
-      const chatHistory = [];
-
-      // Add conversation history
-      for (const msg of conversationHistory) {
-        chatHistory.push(
-          {
-            role: "user",
-            parts: [{ text: msg.question }],
-          },
-          {
-            role: "model",
-            parts: [{ text: msg.answer }],
-          }
-        );
-      }
+      const chatHistory = conversationHistory.flatMap((msg) => [
+        { role: "user" as const, parts: [{ text: msg.question }] },
+        { role: "model" as const, parts: [{ text: msg.answer }] },
+      ]);
 
       const chat = model.startChat({
         history: chatHistory,
         generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1000,
+          temperature: DEFAULT_GEMINI_CONFIG.temperature,
+          maxOutputTokens: DEFAULT_GEMINI_CONFIG.maxOutputTokens,
         },
       });
 
@@ -158,10 +263,8 @@ Please use the information from the reference documents when answering questions
           const words = chunkText.split(/(\s+)/);
           for (const word of words) {
             if (word) {
-              // Send both words and spaces
               onToken(word);
-              // Add a small delay to make the streaming visible
-              await new Promise((resolve) => setTimeout(resolve, 30));
+              await new Promise((resolve) => setTimeout(resolve, 10));
             }
           }
         }
@@ -176,144 +279,76 @@ Please use the information from the reference documents when answering questions
     }
   }
 
+  /**
+   * Generate traffic law response
+   */
   async generateTrafficLawResponse(
     question: string,
-    conversationHistory: Array<{ question: string; answer: string }> = []
+    conversationHistory: ConversationMessage[] = []
   ): Promise<string> {
-    if (!this.isTrafficLawRelated(question, conversationHistory)) {
-      return "I'm sorry, I can only assist with questions related to Vietnamese traffic law.";
+    // Check if it's a greeting message
+    if (TrafficLawDetector.isGreetingMessage(question)) {
+      return ResponseGenerator.generateGreetingResponse(question);
+    }
+
+    // Check if it's traffic law related
+    const isTrafficRelated = TrafficLawDetector.isTrafficLawRelated(
+      question,
+      conversationHistory
+    );
+
+    if (!isTrafficRelated) {
+      return ResponseGenerator.generateNonTrafficResponse(question);
     }
 
     return this.sendToGemini(question, conversationHistory);
   }
 
+  /**
+   * Generate streaming traffic law response
+   */
   async generateTrafficLawResponseStream(
     question: string,
     onToken: (token: string) => void,
-    conversationHistory: Array<{ question: string; answer: string }> = []
+    conversationHistory: ConversationMessage[] = []
   ): Promise<void> {
-    if (!this.isTrafficLawRelated(question, conversationHistory)) {
+    // Check if it's a greeting message
+    if (TrafficLawDetector.isGreetingMessage(question)) {
+      const greetingMessage =
+        ResponseGenerator.generateGreetingResponse(question);
+      await ResponseGenerator.streamMessage(greetingMessage, onToken);
+      return;
+    }
+
+    // Check if it's traffic law related
+    if (
+      !TrafficLawDetector.isTrafficLawRelated(question, conversationHistory)
+    ) {
       const errorMessage =
-        "I'm sorry, I can only assist with questions related to Vietnamese traffic law.";
-      // Simulate streaming for error message
-      const words = errorMessage.split(" ");
-      for (const word of words) {
-        onToken(word + " ");
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
+        ResponseGenerator.generateNonTrafficResponse(question);
+      await ResponseGenerator.streamMessage(errorMessage, onToken, 100);
       return;
     }
 
     return this.sendToGeminiStream(question, onToken, conversationHistory);
   }
 
-  private isTrafficLawRelated(
+  // Expose utility methods for backward compatibility
+  isVietnameseText(text: string): boolean {
+    return VietnameseTextProcessor.isVietnameseText(text);
+  }
+
+  isGreetingMessage(question: string): boolean {
+    return TrafficLawDetector.isGreetingMessage(question);
+  }
+
+  isTrafficLawRelated(
     question: string,
-    conversationHistory: Array<{ question: string; answer: string }> = []
+    conversationHistory: ConversationMessage[] = []
   ): boolean {
-    const trafficKeywords = [
-      "traffic",
-      "driving",
-      "speed",
-      "limit",
-      "license",
-      "vehicle",
-      "road",
-      "highway",
-      "parking",
-      "violation",
-      "fine",
-      "law",
-      "regulation",
-      "motorcycle",
-      "car",
-      "helmet",
-      "seatbelt",
-      "signal",
-      "intersection",
-      "overtaking",
-      "drunk driving",
-      "giao thông",
-      "lái xe",
-      "tốc độ",
-      "bằng lái",
-      "xe cộ",
-      "đường",
-      "cao tốc",
-      "đậu xe",
-      "vi phạm",
-      "phạt",
-      "luật",
-      "quy định",
-      "xe máy",
-      "ô tô",
-      "mũ bảo hiểm",
-      "dây an toàn",
-      "tín hiệu",
-      "giao lộ",
-      "vượt xe",
-      "say rượu",
-      "tuổi",
-      "age",
-      "năm",
-      "years",
-    ];
-
-    const followUpIndicators = [
-      "vậy",
-      "thế",
-      "còn",
-      "và",
-      "how about",
-      "what about",
-      "then",
-      "so",
-      "như thế nào",
-      "sao",
-      "tại sao",
-      "why",
-      "when",
-      "khi nào",
-      "bao nhiêu",
-      "how much",
-      "how many",
-      "có được không",
-      "được không",
-      "can I",
-      "may I",
-    ];
-
-    const questionLower = question.toLowerCase();
-
-    // Direct keyword match
-    const hasTrafficKeywords = trafficKeywords.some((keyword) =>
-      questionLower.includes(keyword.toLowerCase())
+    return TrafficLawDetector.isTrafficLawRelated(
+      question,
+      conversationHistory
     );
-
-    if (hasTrafficKeywords) {
-      return true;
-    }
-
-    // Check if it's a follow-up question and conversation history contains traffic law topics
-    const isFollowUp = followUpIndicators.some((indicator) =>
-      questionLower.includes(indicator.toLowerCase())
-    );
-
-    if (isFollowUp && conversationHistory.length > 0) {
-      // Check if recent conversation history contains traffic law content
-      const recentHistory = conversationHistory.slice(-3); // Last 3 messages
-      const hasTrafficContext = recentHistory.some((msg) => {
-        const combinedText = (msg.question + " " + msg.answer).toLowerCase();
-        return trafficKeywords.some((keyword) =>
-          combinedText.includes(keyword.toLowerCase())
-        );
-      });
-
-      if (hasTrafficContext) {
-        return true;
-      }
-    }
-
-    return false;
   }
 }

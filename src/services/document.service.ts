@@ -17,6 +17,7 @@ import { APIError } from "../common/errors/app-errors";
 export class DocumentService {
   private repository: DocumentRepository;
   private uploadsDir: string;
+  private geminiService: any = null; // Will be set by dependency injection
 
   constructor() {
     this.repository = new DocumentRepository();
@@ -25,6 +26,29 @@ export class DocumentService {
     // Ensure uploads directory exists
     if (!fs.existsSync(this.uploadsDir)) {
       fs.mkdirSync(this.uploadsDir, { recursive: true });
+    }
+  }
+
+  /**
+   * Set GeminiService instance for cache refresh
+   */
+  setGeminiService(geminiService: any): void {
+    this.geminiService = geminiService;
+  }
+
+  /**
+   * Refresh document cache in GeminiService if available
+   */
+  private async refreshDocumentCache(): Promise<void> {
+    if (
+      this.geminiService &&
+      typeof this.geminiService.refreshCache === "function"
+    ) {
+      try {
+        await this.geminiService.refreshCache();
+      } catch (error) {
+        console.error("Failed to refresh document cache:", error);
+      }
     }
   }
 
@@ -68,7 +92,12 @@ export class DocumentService {
         uploadedBy: userId,
       };
 
-      return await this.repository.create(documentData);
+      const result = await this.repository.create(documentData);
+
+      // Refresh document cache
+      await this.refreshDocumentCache();
+
+      return result;
     } catch (error) {
       console.error("Error uploading document:", error);
       if (error instanceof APIError) {
@@ -112,7 +141,12 @@ export class DocumentService {
       isActive: dto.isActive,
     };
 
-    return await this.repository.update(id, updateData);
+    const result = await this.repository.update(id, updateData);
+
+    // Refresh document cache
+    await this.refreshDocumentCache();
+
+    return result;
   }
 
   async updateFile(
@@ -168,7 +202,12 @@ export class DocumentService {
         updatedBy: `user_${userId}`,
       };
 
-      return await this.repository.update(id, updateData);
+      const updatedDocument = await this.repository.update(id, updateData);
+
+      // Refresh document cache in GeminiService
+      await this.refreshDocumentCache();
+
+      return updatedDocument;
     } catch (error) {
       console.error("Error updating document file:", error);
       if (error instanceof APIError) {
@@ -197,7 +236,12 @@ export class DocumentService {
       console.error("Error deleting file:", error);
     }
 
-    return await this.repository.delete(id);
+    const result = await this.repository.delete(id);
+
+    // Refresh document cache
+    await this.refreshDocumentCache();
+
+    return result;
   }
 
   async setActiveDocuments(documentIds: number[], userId: number) {
@@ -215,7 +259,15 @@ export class DocumentService {
       );
     }
 
-    return await this.repository.setActiveDocuments(documentIds, userId);
+    const result = await this.repository.setActiveDocuments(
+      documentIds,
+      userId
+    );
+
+    // Refresh document cache
+    await this.refreshDocumentCache();
+
+    return result;
   }
 
   async getActiveDocuments() {
