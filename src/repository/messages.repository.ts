@@ -85,9 +85,10 @@ export class MessageRepository implements BaseRepository<Message> {
     });
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: number): Promise<{ message: string }> {
     await prisma.message.delete({
       where: { id },
     });
+    return { message: "delete message success" };
   }
 }

@@ -112,13 +112,23 @@ export class MessageController {
 
       const query = plainToClass(PaginationQueryDto, req.query);
 
-      // If a specific conversationId is provided, verify user owns it
-      if (
+      // Check for conversationId in query params directly or in filters
+      let conversationId: number | undefined;
+
+      if (req.query.conversationId) {
+        // conversationId passed directly as query parameter
+        conversationId = parseInt(req.query.conversationId as string);
+      } else if (
         query.filters &&
         typeof query.filters === "object" &&
         "conversationId" in query.filters
       ) {
-        const conversationId = query.filters.conversationId as number;
+        // conversationId passed in filters object
+        conversationId = query.filters.conversationId as number;
+      }
+
+      // If a specific conversationId is provided, verify user owns it
+      if (conversationId) {
         const conversation = await this.conversationService.findById(
           conversationId
         );
@@ -127,6 +137,12 @@ export class MessageController {
             .status(403)
             .json({ message: "Access denied to this conversation" });
         }
+
+        // Ensure the filter is set properly for the service
+        if (!query.filters) {
+          query.filters = {};
+        }
+        query.filters.conversationId = conversationId;
       } else {
         // If no specific conversation, filter to only conversations owned by user
         // This requires joining with conversations table or pre-filtering
@@ -299,8 +315,8 @@ export class MessageController {
           .json({ message: "Access denied to this message" });
       }
 
-      await this.service.delete(id);
-      return res.status(204).send();
+      const result = await this.service.delete(id);
+      return res.status(200).json(result);
     } catch (error) {
       next(error);
     }

@@ -293,8 +293,16 @@ export class ConversationController {
    *           type: integer
    *         description: Conversation ID
    *     responses:
-   *       204:
+   *       200:
    *         description: Conversation deleted successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "delete conversation success"
    *       404:
    *         description: Conversation not found
    */
@@ -319,8 +327,8 @@ export class ConversationController {
           .json({ message: "Access denied to this conversation" });
       }
 
-      await this.service.delete(id);
-      return res.status(204).send();
+      const result = await this.service.delete(id);
+      return res.status(200).json(result);
     } catch (error) {
       next(error);
     }

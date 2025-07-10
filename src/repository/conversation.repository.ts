@@ -83,9 +83,31 @@ export class ConversationRepository implements BaseRepository<Conversation> {
     });
   }
 
-  async delete(id: number): Promise<void> {
-    await prisma.conversation.delete({
-      where: { id },
-    });
+  async delete(id: number): Promise<{ message: string }> {
+    try {
+      // Use a transaction to ensure data consistency
+      await prisma.$transaction(async (tx) => {
+        // First, delete all messages belonging to this conversation
+        const deletedMessages = await tx.message.deleteMany({
+          where: { conversationId: id },
+        });
+
+        console.log(
+          `Deleted ${deletedMessages.count} messages for conversation ${id}`
+        );
+
+        // Then delete the conversation
+        await tx.conversation.delete({
+          where: { id },
+        });
+
+        console.log(`Successfully deleted conversation ${id}`);
+      });
+
+      return { message: "delete conversation success" };
+    } catch (error) {
+      console.error(`Failed to delete conversation ${id}:`, error);
+      throw error;
+    }
   }
 }
