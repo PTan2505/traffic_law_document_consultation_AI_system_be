@@ -8,6 +8,9 @@ const documentController = new DocumentController();
 // Apply authentication middleware to all routes
 router.use(authMiddleware.authenticate);
 
+// Apply admin requirement to all routes
+router.use(authMiddleware.requireAdmin);
+
 // Upload document with error handling
 router.post(
   "/upload",
@@ -43,7 +46,6 @@ router.get("/:id", documentController.findById.bind(documentController));
 // Update document file (admin only)
 router.put(
   "/:id/file",
-  authMiddleware.requireAdmin,
   (req, res, next) => {
     documentController.uploadMiddleware(req, res, (err) => {
       if (err) {
